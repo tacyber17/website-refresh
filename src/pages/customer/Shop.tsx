@@ -4,20 +4,32 @@ import { ProductCard } from "@/components/customer/ProductCard";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
+import headphonesImg from "@/assets/headphones.jpg";
+import smartwatchImg from "@/assets/smartwatch.jpg";
+import keyboardImg from "@/assets/keyboard.jpg";
+import usbHubImg from "@/assets/usb-hub.jpg";
+import mouseImg from "@/assets/mouse.jpg";
+import webcamImg from "@/assets/webcam.jpg";
+import monitorStandImg from "@/assets/monitor-stand.jpg";
+import laptopStandImg from "@/assets/laptop-stand.jpg";
+import speakerImg from "@/assets/speaker.jpg";
+import phoneCaseImg from "@/assets/phone-case.jpg";
+import tabletHolderImg from "@/assets/tablet-holder.jpg";
+import wirelessChargerImg from "@/assets/wireless-charger.jpg";
 
 const allProducts = [
-  { id: 1, name: "Premium Wireless Headphones", price: "$129.99", image: "/placeholder.svg", category: "Electronics", rating: 4.8, isNew: true },
-  { id: 2, name: "Smart Watch Pro", price: "$299.99", image: "/placeholder.svg", category: "Wearables", rating: 4.6, discount: "-20%" },
-  { id: 3, name: "Mechanical Keyboard RGB", price: "$159.99", image: "/placeholder.svg", category: "Accessories", rating: 4.9 },
-  { id: 4, name: "USB-C Hub Pro", price: "$79.99", image: "/placeholder.svg", category: "Accessories", rating: 4.7 },
-  { id: 5, name: "Wireless Mouse Gaming", price: "$59.99", image: "/placeholder.svg", category: "Accessories", rating: 4.5, isNew: true },
-  { id: 6, name: "4K Webcam HD", price: "$149.99", image: "/placeholder.svg", category: "Electronics", rating: 4.4 },
-  { id: 7, name: "Monitor Stand Aluminum", price: "$89.99", image: "/placeholder.svg", category: "Accessories", rating: 4.6 },
-  { id: 8, name: "Laptop Stand Ergonomic", price: "$49.99", image: "/placeholder.svg", category: "Accessories", rating: 4.7, discount: "-15%" },
-  { id: 9, name: "Bluetooth Speaker", price: "$99.99", image: "/placeholder.svg", category: "Electronics", rating: 4.8 },
-  { id: 10, name: "Phone Case Premium", price: "$29.99", image: "/placeholder.svg", category: "Accessories", rating: 4.3 },
-  { id: 11, name: "Tablet Holder", price: "$39.99", image: "/placeholder.svg", category: "Accessories", rating: 4.5 },
-  { id: 12, name: "Wireless Charger Fast", price: "$44.99", image: "/placeholder.svg", category: "Electronics", rating: 4.6, isNew: true },
+  { id: 1, name: "Premium Wireless Headphones", price: "$129.99", image: headphonesImg, category: "Electronics", rating: 4.8, isNew: true },
+  { id: 2, name: "Smart Watch Pro", price: "$299.99", image: smartwatchImg, category: "Wearables", rating: 4.6, discount: "-20%" },
+  { id: 3, name: "Mechanical Keyboard RGB", price: "$159.99", image: keyboardImg, category: "Accessories", rating: 4.9 },
+  { id: 4, name: "USB-C Hub Pro", price: "$79.99", image: usbHubImg, category: "Accessories", rating: 4.7 },
+  { id: 5, name: "Wireless Mouse Gaming", price: "$59.99", image: mouseImg, category: "Accessories", rating: 4.5, isNew: true },
+  { id: 6, name: "4K Webcam HD", price: "$149.99", image: webcamImg, category: "Electronics", rating: 4.4 },
+  { id: 7, name: "Monitor Stand Aluminum", price: "$89.99", image: monitorStandImg, category: "Accessories", rating: 4.6 },
+  { id: 8, name: "Laptop Stand Ergonomic", price: "$49.99", image: laptopStandImg, category: "Accessories", rating: 4.7, discount: "-15%" },
+  { id: 9, name: "Bluetooth Speaker", price: "$99.99", image: speakerImg, category: "Electronics", rating: 4.8 },
+  { id: 10, name: "Phone Case Premium", price: "$29.99", image: phoneCaseImg, category: "Accessories", rating: 4.3 },
+  { id: 11, name: "Tablet Holder", price: "$39.99", image: tabletHolderImg, category: "Accessories", rating: 4.5 },
+  { id: 12, name: "Wireless Charger Fast", price: "$44.99", image: wirelessChargerImg, category: "Electronics", rating: 4.6, isNew: true },
 ];
 
 const categories = ["All", "Electronics", "Accessories", "Wearables"];
