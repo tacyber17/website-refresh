@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 interface User {
   email: string;
   name: string;
+  phone: string;
   createdAt: string;
 }
 
@@ -20,7 +21,7 @@ interface Order {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => boolean;
-  signup: (email: string, password: string, name: string) => boolean;
+  signup: (email: string, password: string, name: string, phone: string) => boolean;
   logout: () => void;
   isAuthenticated: boolean;
   orders: Order[];
@@ -49,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = (email: string, password: string, name: string): boolean => {
+  const signup = (email: string, password: string, name: string, phone: string): boolean => {
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     
     if (users.find((u: any) => u.email === email)) {
@@ -60,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newUser: User = {
       email,
       name,
+      phone,
       createdAt: new Date().toISOString(),
     };
 
@@ -84,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const user: User = {
       email: foundUser.email,
       name: foundUser.name,
+      phone: foundUser.phone,
       createdAt: foundUser.createdAt,
     };
 

@@ -68,6 +68,10 @@ const Account = () => {
                 <p className="font-medium">{user.email}</p>
               </div>
               <div>
+                <p className="text-sm text-muted-foreground">Phone</p>
+                <p className="font-medium">{user.phone}</p>
+              </div>
+              <div>
                 <p className="text-sm text-muted-foreground">Member Since</p>
                 <p className="font-medium">
                   {new Date(user.createdAt).toLocaleDateString()}
