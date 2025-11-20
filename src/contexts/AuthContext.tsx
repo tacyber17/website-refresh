@@ -50,11 +50,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Fetch user profile from profiles table
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
+          
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          }
           
           if (profile) {
             setUser({
@@ -85,8 +89,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single()
-          .then(({ data: profile }) => {
+          .maybeSingle()
+          .then(({ data: profile, error: profileError }) => {
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+            }
+            
             if (profile) {
               setUser({
                 id: session.user.id,
