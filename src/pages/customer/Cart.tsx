@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, Plus, Minus } from "lucide-react";
 import { Link } from "react-router-dom";
+import headphonesImg from "@/assets/headphones.jpg";
+import smartwatchImg from "@/assets/smartwatch.jpg";
+import usbHubImg from "@/assets/usb-hub.jpg";
 
 const cartItems = [
-  { id: 1, name: "Premium Wireless Headphones", price: 129.99, quantity: 1, image: "/placeholder.svg" },
-  { id: 2, name: "Smart Watch Pro", price: 299.99, quantity: 1, image: "/placeholder.svg" },
-  { id: 3, name: "USB-C Hub Pro", price: 79.99, quantity: 2, image: "/placeholder.svg" },
+  { id: 1, name: "Premium Wireless Headphones", price: 129.99, quantity: 1, image: headphonesImg },
+  { id: 2, name: "Smart Watch Pro", price: 299.99, quantity: 1, image: smartwatchImg },
+  { id: 3, name: "USB-C Hub Pro", price: 79.99, quantity: 2, image: usbHubImg },
 ];
 
 const Cart = () => {

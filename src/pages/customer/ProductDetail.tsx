@@ -6,13 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Heart, Share2, Star, Check, Truck, Shield, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import headphonesImg from "@/assets/headphones.jpg";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
 
-  const images = ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg", "/placeholder.svg"];
+  const images = [headphonesImg, headphonesImg, headphonesImg, headphonesImg];
 
   const features = [
     "Premium build quality",

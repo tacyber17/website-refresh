@@ -4,13 +4,17 @@ import { ProductCard } from "@/components/customer/ProductCard";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Shield, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
+import headphonesImg from "@/assets/headphones.jpg";
+import smartwatchImg from "@/assets/smartwatch.jpg";
+import keyboardImg from "@/assets/keyboard.jpg";
+import usbHubImg from "@/assets/usb-hub.jpg";
 
 const featuredProducts = [
   { 
     id: 1, 
     name: "Premium Wireless Headphones", 
     price: "$129.99", 
-    image: "/placeholder.svg",
+    image: headphonesImg,
     category: "Electronics",
     rating: 4.8,
     isNew: true
@@ -19,7 +23,7 @@ const featuredProducts = [
     id: 2, 
     name: "Smart Watch Pro", 
     price: "$299.99", 
-    image: "/placeholder.svg",
+    image: smartwatchImg,
     category: "Wearables",
     rating: 4.6,
     discount: "-20%"
@@ -28,7 +32,7 @@ const featuredProducts = [
     id: 3, 
     name: "Mechanical Keyboard RGB", 
     price: "$159.99", 
-    image: "/placeholder.svg",
+    image: keyboardImg,
     category: "Accessories",
     rating: 4.9
   },
@@ -36,7 +40,7 @@ const featuredProducts = [
     id: 4, 
     name: "USB-C Hub Pro", 
     price: "$79.99", 
-    image: "/placeholder.svg",
+    image: usbHubImg,
     category: "Accessories",
     rating: 4.7
   },
