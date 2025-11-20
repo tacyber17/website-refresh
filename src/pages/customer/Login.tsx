@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { CustomerHeader } from '@/components/customer/CustomerHeader';
 import { Footer } from '@/components/customer/Footer';
 import { Button } from '@/components/ui/button';
@@ -12,35 +11,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, signup, isAuthenticated } = useAuth();
+  const { login, signup } = useAuth();
   
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({ email: '', password: '', name: '' });
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate]);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(loginData.email, loginData.password);
-    if (success) {
-      // Check if MFA is required
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      if (factors?.totp && factors.totp.length > 0) {
-        navigate('/mfa-verification');
-      } else {
-        navigate('/');
-      }
+    if (login(loginData.email, loginData.password)) {
+      navigate('/');
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await signup(signupData.email, signupData.password, signupData.name);
-    if (success) {
+    if (signup(signupData.email, signupData.password, signupData.name)) {
       navigate('/');
     }
   };

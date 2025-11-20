@@ -5,91 +5,24 @@ import { Footer } from '@/components/customer/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Package, User, LogOut, Shield, ShieldCheck, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { Package, User, LogOut } from 'lucide-react';
+import { useEffect } from 'react';
 
 const Account = () => {
-  const { orders, logout, session } = useAuth();
+  const { user, orders, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [isLoadingMFA, setIsLoadingMFA] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   useEffect(() => {
-    // Check authentication
-    if (!session) {
+    if (!isAuthenticated) {
       navigate('/login');
-      return;
     }
+  }, [isAuthenticated, navigate]);
 
-    // Fetch profile
-    fetchProfile();
-    checkMFAStatus();
-  }, [session, navigate]);
+  if (!user) return null;
 
-  const fetchProfile = async () => {
-    if (!session?.user?.id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Profile fetch error:', error);
-        toast.error('Failed to load profile');
-      } else if (data) {
-        setProfile(data);
-      }
-    } catch (err) {
-      console.error('Profile fetch exception:', err);
-    } finally {
-      setIsLoadingProfile(false);
-    }
-  };
-
-  const checkMFAStatus = async () => {
-    try {
-      const { data } = await supabase.auth.mfa.listFactors();
-      if (data?.totp && data.totp.length > 0) {
-        setMfaEnabled(true);
-      }
-    } catch (error) {
-      console.error('Error checking MFA status:', error);
-    } finally {
-      setIsLoadingMFA(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
     navigate('/');
-  };
-
-  const handleEnableMFA = () => {
-    navigate('/mfa-enrollment');
-  };
-
-  const handleDisableMFA = async () => {
-    try {
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      if (factors?.totp && factors.totp.length > 0) {
-        const factor = factors.totp[0];
-        const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
-        
-        if (error) throw error;
-        
-        setMfaEnabled(false);
-        toast.success('MFA disabled successfully');
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to disable MFA');
-    }
   };
 
   const getStatusColor = (status: string) => {
@@ -104,39 +37,6 @@ const Account = () => {
         return 'bg-gray-500';
     }
   };
-
-  // Show loading state
-  if (isLoadingProfile) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <CustomerHeader />
-        <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Show error if no profile
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <CustomerHeader />
-        <main className="flex-1 container mx-auto px-4 py-12">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">Failed to load profile. Please try refreshing the page.</p>
-              <div className="flex justify-center mt-4">
-                <Button onClick={() => navigate('/login')}>Back to Login</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -161,52 +61,17 @@ const Account = () => {
             <CardContent className="space-y-2">
               <div>
                 <p className="text-sm text-muted-foreground">Name</p>
-                <p className="font-medium">{profile.full_name || 'N/A'}</p>
+                <p className="font-medium">{user.name}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">{profile.email}</p>
+                <p className="font-medium">{user.email}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Member Since</p>
                 <p className="font-medium">
-                  {new Date(profile.created_at).toLocaleDateString()}
+                  {new Date(user.createdAt).toLocaleDateString()}
                 </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Security
-              </CardTitle>
-              <CardDescription>
-                Manage your account security settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <ShieldCheck className={`w-5 h-5 ${mfaEnabled ? 'text-green-500' : 'text-muted-foreground'}`} />
-                  <div>
-                    <p className="font-medium">Two-Factor Authentication</p>
-                    <p className="text-sm text-muted-foreground">
-                      {mfaEnabled 
-                        ? 'MFA is enabled on your account' 
-                        : 'Add an extra layer of security to your account'}
-                    </p>
-                  </div>
-                </div>
-                {!isLoadingMFA && (
-                  <Button
-                    onClick={mfaEnabled ? handleDisableMFA : handleEnableMFA}
-                    variant={mfaEnabled ? 'outline' : 'default'}
-                  >
-                    {mfaEnabled ? 'Disable' : 'Enable'}
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -242,7 +107,7 @@ const Account = () => {
                         <div>
                           <p className="font-semibold">Order #{order.id.slice(0, 8)}</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(order.created_at).toLocaleDateString()}
+                            {new Date(order.date).toLocaleDateString()}
                           </p>
                         </div>
                         <Badge className={getStatusColor(order.status)}>
@@ -250,7 +115,7 @@ const Account = () => {
                         </Badge>
                       </div>
                       <div className="space-y-2">
-                        {order.items.map((item: any, idx: number) => (
+                        {order.items.map((item, idx) => (
                           <div key={idx} className="flex justify-between text-sm">
                             <span>
                               {item.name} x {item.quantity}
@@ -264,10 +129,10 @@ const Account = () => {
                         <span>${order.total.toFixed(2)}</span>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        <p>Payment: {order.payment_method}</p>
+                        <p>Payment: {order.paymentMethod}</p>
                         <p>
-                          Shipping: {order.shipping_address.address},{' '}
-                          {order.shipping_address.city}
+                          Shipping: {order.shippingAddress.address},{' '}
+                          {order.shippingAddress.city}
                         </p>
                       </div>
                     </div>

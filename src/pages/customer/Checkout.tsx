@@ -75,7 +75,7 @@ const Checkout = () => {
     setStep(2);
   };
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = () => {
     if (!shippingData) {
       toast({
         title: "Error",
@@ -108,18 +108,16 @@ const Checkout = () => {
       orderDate: new Date().toISOString(),
     };
 
-    const orderId = await addOrder({
+    addOrder({
       items,
-      shipping_address: shippingData,
-      payment_method: paymentMethod,
+      shippingAddress: shippingData,
+      paymentMethod,
       total,
     });
 
-    if (orderId) {
-      localStorage.setItem("lastOrder", JSON.stringify({ ...orderData, orderId }));
-      clearCart();
-      navigate("/order-confirmation");
-    }
+    localStorage.setItem("lastOrder", JSON.stringify(orderData));
+    clearCart();
+    navigate("/order-confirmation");
   };
 
   return (

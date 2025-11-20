@@ -1,26 +1,17 @@
-import { ShoppingCart, Search, User, Menu, X, LogOut } from "lucide-react";
+import { ShoppingCart, Search, User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 export const CustomerHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { getCartCount } = useCart();
-  const { isAuthenticated, user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const cartCount = getCartCount();
-
-  const handleLogout = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await logout();
-    navigate("/");
-  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -63,27 +54,12 @@ export const CustomerHeader = () => {
 
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
-              <HoverCard openDelay={200}>
-                <HoverCardTrigger asChild>
-                  <Link to="/account">
-                    <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>{user?.name}</span>
-                    </Button>
-                  </Link>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-48 p-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full justify-start gap-2 text-destructive hover:text-destructive"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </Button>
-                </HoverCardContent>
-              </HoverCard>
+              <Link to="/account">
+                <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>{user?.name}</span>
+                </Button>
+              </Link>
             ) : (
               <Link to="/login" className="hidden md:block">
                 <Button variant="default" size="sm">Login</Button>
