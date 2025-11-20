@@ -1,6 +1,8 @@
 import { NavLink } from "@/components/NavLink";
 import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -9,6 +11,14 @@ const navigation = [
 ];
 
 export const Sidebar = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
   return (
     <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-card border-r border-border">
       <div className="flex flex-col flex-grow pt-5 overflow-y-auto">
@@ -34,7 +44,10 @@ export const Sidebar = () => {
           ))}
         </nav>
         <div className="flex-shrink-0 p-4 border-t border-border">
-          <button className="group flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted">
+          <button 
+            onClick={handleLogout}
+            className="group flex w-full items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted"
+          >
             <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
             Logout
           </button>
