@@ -12,12 +12,14 @@ interface User {
 
 interface Order {
   id: string;
-  date: string;
-  total: number;
+  user_id: string;
   items: any[];
-  shippingAddress: any;
-  paymentMethod: string;
+  shipping_address: any;
+  payment_method: string;
+  total: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered';
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
@@ -27,7 +29,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'date' | 'status'>) => void;
+  addOrder: (order: Omit<Order, 'id' | 'user_id' | 'status' | 'created_at' | 'updated_at'>) => Promise<string | null>;
   session: Session | null;
   loading: boolean;
 }
@@ -61,6 +63,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name: profile.full_name || '',
               createdAt: profile.created_at,
             });
+            
+            // Fetch orders from database
+            setTimeout(() => {
+              loadOrders(session.user.id);
+            }, 0);
           }
         } else {
           setUser(null);
@@ -87,6 +94,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 name: profile.full_name || '',
                 createdAt: profile.created_at,
               });
+              
+              // Fetch orders from database
+              loadOrders(session.user.id);
             }
             setLoading(false);
           });
@@ -97,6 +107,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const loadOrders = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setOrders((data || []) as Order[]);
+    } catch (error: any) {
+      console.error('Error loading orders:', error);
+    }
+  };
 
   const signup = async (email: string, password: string, name: string): Promise<boolean> => {
     try {
@@ -181,19 +207,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const addOrder = (orderData: Omit<Order, 'id' | 'date' | 'status'>) => {
-    if (!user) return;
+  const addOrder = async (orderData: Omit<Order, 'id' | 'user_id' | 'status' | 'created_at' | 'updated_at'>): Promise<string | null> => {
+    if (!user) return null;
 
-    const newOrder: Order = {
-      ...orderData,
-      id: crypto.randomUUID(),
-      date: new Date().toISOString(),
-      status: 'pending',
-    };
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([{
+          user_id: user.id,
+          items: orderData.items,
+          shipping_address: orderData.shipping_address,
+          payment_method: orderData.payment_method,
+          total: orderData.total,
+          status: 'pending',
+        }])
+        .select()
+        .single();
 
-    const updatedOrders = [newOrder, ...orders];
-    setOrders(updatedOrders);
-    localStorage.setItem(`orders_${user.email}`, JSON.stringify(updatedOrders));
+      if (error) throw error;
+
+      if (data) {
+        setOrders([data as Order, ...orders]);
+        return data.id;
+      }
+
+      return null;
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create order');
+      return null;
+    }
   };
 
   return (

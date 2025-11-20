@@ -183,7 +183,7 @@ const Account = () => {
                         <div>
                           <p className="font-semibold">Order #{order.id.slice(0, 8)}</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(order.date).toLocaleDateString()}
+                            {new Date(order.created_at).toLocaleDateString()}
                           </p>
                         </div>
                         <Badge className={getStatusColor(order.status)}>
@@ -205,10 +205,10 @@ const Account = () => {
                         <span>${order.total.toFixed(2)}</span>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        <p>Payment: {order.paymentMethod}</p>
+                        <p>Payment: {order.payment_method}</p>
                         <p>
-                          Shipping: {order.shippingAddress.address},{' '}
-                          {order.shippingAddress.city}
+                          Shipping: {order.shipping_address.address},{' '}
+                          {order.shipping_address.city}
                         </p>
                       </div>
                     </div>
