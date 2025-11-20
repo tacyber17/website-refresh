@@ -15,16 +15,20 @@ import Checkout from "./pages/customer/Checkout";
 import OrderConfirmation from "./pages/customer/OrderConfirmation";
 import NotFound from "./pages/NotFound";
 import { CartProvider } from "./contexts/CartContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import Login from "./pages/customer/Login";
+import Account from "./pages/customer/Account";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <CartProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <AuthProvider>
+        <CartProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
           {/* Customer Routes - Default */}
           <Route path="/" element={<Home />} />
@@ -33,6 +37,8 @@ const App = () => (
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/account" element={<Account />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={
@@ -62,7 +68,8 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-      </CartProvider>
+        </CartProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Truck, CheckCircle, ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -31,6 +32,7 @@ type ShippingFormData = z.infer<typeof shippingSchema>;
 
 const Checkout = () => {
   const { items, getCartTotal, clearCart } = useCart();
+  const { isAuthenticated, addOrder } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -83,6 +85,16 @@ const Checkout = () => {
       return;
     }
 
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to complete your order",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+
     // Store order data for confirmation page
     const orderData = {
       orderNumber: `ORD-${Date.now()}`,
@@ -95,6 +107,13 @@ const Checkout = () => {
       total,
       orderDate: new Date().toISOString(),
     };
+
+    addOrder({
+      items,
+      shippingAddress: shippingData,
+      paymentMethod,
+      total,
+    });
 
     localStorage.setItem("lastOrder", JSON.stringify(orderData));
     clearCart();
