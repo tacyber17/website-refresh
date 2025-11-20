@@ -1,5 +1,3 @@
-import { Header } from "@/components/Header";
-import { Sidebar } from "@/components/Sidebar";
 import { StatCard } from "@/components/StatCard";
 import { DollarSign, ShoppingCart, Users, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -55,16 +53,12 @@ const recentOrders = [
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <Sidebar />
-      <div className="lg:pl-64">
-        <Header />
-        <main className="py-8">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-              <p className="mt-2 text-muted-foreground">Welcome back! Here's what's happening today.</p>
-            </div>
+    <div className="py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="mt-2 text-muted-foreground">Welcome back! Here's what's happening today.</p>
+        </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
               {stats.map((stat) => (
@@ -130,9 +124,7 @@ const Dashboard = () => {
               </Card>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+        </div>
   );
 };
 

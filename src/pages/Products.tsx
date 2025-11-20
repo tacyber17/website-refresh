@@ -1,5 +1,3 @@
-import { Header } from "@/components/Header";
-import { Sidebar } from "@/components/Sidebar";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,17 +25,13 @@ const products = [
 
 const Products = () => {
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <Sidebar />
-      <div className="lg:pl-64">
-        <Header />
-        <main className="py-8">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">Products</h1>
-                <p className="mt-2 text-muted-foreground">Manage your product inventory</p>
-              </div>
+    <div className="py-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Products</h1>
+            <p className="mt-2 text-muted-foreground">Manage your product inventory</p>
+          </div>
               <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-glow">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Product
@@ -95,12 +89,10 @@ const Products = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
-            </Card>
-          </div>
-        </main>
+            </div>
+          </Card>
+        </div>
       </div>
-    </div>
   );
 };
 
