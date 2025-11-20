@@ -4,10 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 
 export const CustomerHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const cartItemsCount = 3; // This would come from cart state
+  const { getCartCount } = useCart();
+  const cartCount = getCartCount();
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -52,12 +54,12 @@ export const CustomerHeader = () => {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <User className="h-5 w-5" />
             </Button>
-            <Link to="/shop/cart">
+            <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
-                {cartItemsCount > 0 && (
+                {cartCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                    {cartItemsCount}
+                    {cartCount}
                   </Badge>
                 )}
               </Button>

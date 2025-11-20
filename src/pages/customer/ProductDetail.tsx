@@ -7,11 +7,24 @@ import { ShoppingCart, Heart, Share2, Star, Check, Truck, Shield, RotateCcw } fr
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import headphonesImg from "@/assets/headphones.jpg";
+import { useCart } from "@/contexts/CartContext";
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+
+  const product = {
+    id: 1,
+    name: "Premium Wireless Headphones",
+    price: 129.99,
+    image: headphonesImg,
+  };
+
+  const handleAddToCart = () => {
+    addToCart(product, quantity);
+  };
 
   const images = [headphonesImg, headphonesImg, headphonesImg, headphonesImg];
 
@@ -106,7 +119,11 @@ const ProductDetail = () => {
               </div>
 
               <div className="flex gap-3">
-                <Button size="lg" className="flex-1 gradient-primary text-primary-foreground hover:opacity-90 shadow-glow">
+                <Button 
+                  size="lg" 
+                  className="flex-1 gradient-primary text-primary-foreground hover:opacity-90 shadow-glow"
+                  onClick={handleAddToCart}
+                >
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Add to Cart
                 </Button>
