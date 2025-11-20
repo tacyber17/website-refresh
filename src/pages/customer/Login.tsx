@@ -16,18 +16,16 @@ const Login = () => {
   const [loginData, setLoginData] = useState({ email: '', password: '', phone: '' });
   const [signupData, setSignupData] = useState({ email: '', password: '', name: '', phone: '' });
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await login(loginData.email, loginData.password, loginData.phone);
-    if (success) {
+    if (login(loginData.email, loginData.password, loginData.phone)) {
       navigate('/');
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await signup(signupData.email, signupData.password, signupData.name, signupData.phone);
-    if (success) {
+    if (signup(signupData.email, signupData.password, signupData.name, signupData.phone)) {
       navigate('/');
     }
   };

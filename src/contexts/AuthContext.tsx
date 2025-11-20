@@ -1,15 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
-  id: string;
   email: string;
   name: string;
   phone: string;
   createdAt: string;
-  role?: 'admin' | 'seller' | 'buyer';
 }
 
 interface Order {
@@ -24,11 +20,10 @@ interface Order {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, phone: string) => Promise<boolean>;
-  signup: (email: string, password: string, name: string, phone: string) => Promise<boolean>;
-  logout: () => Promise<void>;
+  login: (email: string, password: string, phone: string) => boolean;
+  signup: (email: string, password: string, name: string, phone: string) => boolean;
+  logout: () => void;
   isAuthenticated: boolean;
-  isAdmin: boolean;
   orders: Order[];
   addOrder: (order: Omit<Order, 'id' | 'date' | 'status'>) => void;
 }
@@ -38,202 +33,90 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadUserProfile(session.user);
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await loadUserProfile(session.user);
-      } else {
-        setUser(null);
-        setIsAdmin(false);
-        setOrders([]);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      loadOrders(parsedUser.email);
+    }
   }, []);
 
-  const loadUserProfile = async (supabaseUser: SupabaseUser) => {
-    try {
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', supabaseUser.id)
-        .single();
-
-      // Get user role
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', supabaseUser.id)
-        .single();
-
-      const userRole = roleData?.role as 'admin' | 'seller' | 'buyer' | undefined;
-
-      if (profile) {
-        setUser({
-          id: supabaseUser.id,
-          email: profile.email,
-          name: profile.full_name || '',
-          phone: supabaseUser.user_metadata?.phone || '',
-          createdAt: profile.created_at,
-          role: userRole,
-        });
-        setIsAdmin(userRole === 'admin');
-        loadOrders(supabaseUser.id);
-      }
-    } catch (error) {
-      console.error('Error loading user profile:', error);
+  const loadOrders = (email: string) => {
+    const userOrders = localStorage.getItem(`orders_${email}`);
+    if (userOrders) {
+      setOrders(JSON.parse(userOrders));
     }
   };
 
-  const loadOrders = async (userId: string) => {
-    try {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        setOrders(data.map(order => ({
-          id: order.id,
-          date: order.created_at,
-          total: order.total,
-          items: order.items as any[],
-          shippingAddress: order.shipping_address,
-          paymentMethod: order.payment_method,
-          status: order.status as any,
-        })));
-      }
-    } catch (error) {
-      console.error('Error loading orders:', error);
-    }
-  };
-
-  const signup = async (email: string, password: string, name: string, phone: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: name,
-            phone: phone,
-          },
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
-
-      if (error) {
-        toast.error(error.message);
-        return false;
-      }
-
-      if (data.user) {
-        toast.success('Account created successfully!');
-        return true;
-      }
-
-      return false;
-    } catch (error: any) {
-      toast.error(error.message || 'An error occurred during signup');
+  const signup = (email: string, password: string, name: string, phone: string): boolean => {
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    
+    if (users.find((u: any) => u.email === email)) {
+      toast.error('User already exists');
       return false;
     }
+
+    const newUser: User = {
+      email,
+      name,
+      phone,
+      createdAt: new Date().toISOString(),
+    };
+
+    users.push({ ...newUser, password });
+    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('currentUser', JSON.stringify(newUser));
+    setUser(newUser);
+    setOrders([]);
+    toast.success('Account created successfully!');
+    return true;
   };
 
-  const login = async (email: string, password: string, phone: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+  const login = (email: string, password: string, phone: string): boolean => {
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const foundUser = users.find((u: any) => u.email === email && u.password === password && u.phone === phone);
 
-      if (error) {
-        toast.error('Invalid credentials');
-        return false;
-      }
-
-      if (data.user) {
-        // Verify phone matches
-        const userPhone = data.user.user_metadata?.phone;
-        if (userPhone && userPhone !== phone) {
-          await supabase.auth.signOut();
-          toast.error('Invalid credentials');
-          return false;
-        }
-
-        toast.success('Logged in successfully!');
-        return true;
-      }
-
-      return false;
-    } catch (error: any) {
-      toast.error(error.message || 'An error occurred during login');
+    if (!foundUser) {
+      toast.error('Invalid credentials');
       return false;
     }
+
+    const user: User = {
+      email: foundUser.email,
+      name: foundUser.name,
+      phone: foundUser.phone,
+      createdAt: foundUser.createdAt,
+    };
+
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    setUser(user);
+    loadOrders(email);
+    toast.success('Logged in successfully!');
+    return true;
   };
 
-  const logout = async () => {
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      setIsAdmin(false);
-      setOrders([]);
-      toast.success('Logged out successfully');
-    } catch (error: any) {
-      toast.error(error.message || 'Error logging out');
-    }
+  const logout = () => {
+    localStorage.removeItem('currentUser');
+    setUser(null);
+    setOrders([]);
+    toast.success('Logged out successfully');
   };
 
-  const addOrder = async (orderData: Omit<Order, 'id' | 'date' | 'status'>) => {
+  const addOrder = (orderData: Omit<Order, 'id' | 'date' | 'status'>) => {
     if (!user) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          items: orderData.items,
-          shipping_address: orderData.shippingAddress,
-          payment_method: orderData.paymentMethod,
-          total: orderData.total,
-        })
-        .select()
-        .single();
+    const newOrder: Order = {
+      ...orderData,
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      status: 'pending',
+    };
 
-      if (error) {
-        toast.error('Failed to create order');
-        return;
-      }
-
-      if (data) {
-        const newOrder: Order = {
-          id: data.id,
-          date: data.created_at,
-          total: data.total,
-          items: data.items as any[],
-          shippingAddress: data.shipping_address,
-          paymentMethod: data.payment_method,
-          status: data.status as any,
-        };
-
-        setOrders([newOrder, ...orders]);
-      }
-    } catch (error) {
-      console.error('Error creating order:', error);
-      toast.error('Failed to create order');
-    }
+    const updatedOrders = [newOrder, ...orders];
+    setOrders(updatedOrders);
+    localStorage.setItem(`orders_${user.email}`, JSON.stringify(updatedOrders));
   };
 
   return (
@@ -244,7 +127,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signup,
         logout,
         isAuthenticated: !!user,
-        isAdmin,
         orders,
         addOrder,
       }}

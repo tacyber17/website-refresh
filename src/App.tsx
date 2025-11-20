@@ -16,7 +16,6 @@ import OrderConfirmation from "./pages/customer/OrderConfirmation";
 import NotFound from "./pages/NotFound";
 import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider } from "./contexts/AuthContext";
-import { ProtectedRoute } from "./components/ProtectedRoute";
 import Login from "./pages/customer/Login";
 import Account from "./pages/customer/Account";
 
@@ -41,32 +40,28 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/account" element={<Account />} />
 
-          {/* Admin Routes - Protected */}
+          {/* Admin Routes */}
           <Route path="/admin" element={
-            <ProtectedRoute requireAdmin>
-              <div className="flex h-screen bg-gradient-subtle">
-                <Sidebar />
-                <div className="flex-1 flex flex-col lg:pl-64">
-                  <Header />
-                  <main className="flex-1 overflow-y-auto">
-                    <Dashboard />
-                  </main>
-                </div>
+            <div className="flex h-screen bg-gradient-subtle">
+              <Sidebar />
+              <div className="flex-1 flex flex-col lg:pl-64">
+                <Header />
+                <main className="flex-1 overflow-y-auto">
+                  <Dashboard />
+                </main>
               </div>
-            </ProtectedRoute>
+            </div>
           } />
           <Route path="/admin/products" element={
-            <ProtectedRoute requireAdmin>
-              <div className="flex h-screen bg-gradient-subtle">
-                <Sidebar />
-                <div className="flex-1 flex flex-col lg:pl-64">
-                  <Header />
-                  <main className="flex-1 overflow-y-auto">
-                    <Products />
-                  </main>
-                </div>
+            <div className="flex h-screen bg-gradient-subtle">
+              <Sidebar />
+              <div className="flex-1 flex flex-col lg:pl-64">
+                <Header />
+                <main className="flex-1 overflow-y-auto">
+                  <Products />
+                </main>
               </div>
-            </ProtectedRoute>
+            </div>
           } />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
