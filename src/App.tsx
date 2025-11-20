@@ -11,6 +11,8 @@ import Home from "./pages/customer/Home";
 import Shop from "./pages/customer/Shop";
 import ProductDetail from "./pages/customer/ProductDetail";
 import Cart from "./pages/customer/Cart";
+import Checkout from "./pages/customer/Checkout";
+import OrderConfirmation from "./pages/customer/OrderConfirmation";
 import NotFound from "./pages/NotFound";
 import { CartProvider } from "./contexts/CartContext";
 
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/shop" element={<Shop />} />
           <Route path="/shop/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
 
           {/* Admin Routes */}
           <Route path="/admin" element={
