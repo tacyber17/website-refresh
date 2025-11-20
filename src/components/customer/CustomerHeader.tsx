@@ -15,7 +15,9 @@ export const CustomerHeader = () => {
   const navigate = useNavigate();
   const cartCount = getCartCount();
 
-  const handleLogout = async () => {
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     await logout();
     navigate("/");
   };
