@@ -11,18 +11,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const Account = () => {
-  const { user, orders, logout, isAuthenticated } = useAuth();
+  const { user, orders, logout, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [isLoadingMFA, setIsLoadingMFA] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       navigate('/login');
-    } else {
+    } else if (!loading && isAuthenticated) {
       checkMFAStatus();
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, loading, navigate]);
 
   const checkMFAStatus = async () => {
     try {
@@ -37,7 +37,7 @@ const Account = () => {
     }
   };
 
-  if (!user) return null;
+  if (loading || !user) return null;
 
   const handleLogout = async () => {
     await logout();
