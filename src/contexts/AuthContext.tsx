@@ -20,7 +20,7 @@ interface Order {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string, phone: string) => boolean;
   signup: (email: string, password: string, name: string, phone: string) => boolean;
   logout: () => void;
   isAuthenticated: boolean;
@@ -74,12 +74,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
-  const login = (email: string, password: string): boolean => {
+  const login = (email: string, password: string, phone: string): boolean => {
     const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const foundUser = users.find((u: any) => u.email === email && u.password === password);
+    const foundUser = users.find((u: any) => u.email === email && u.password === password && u.phone === phone);
 
     if (!foundUser) {
-      toast.error('Invalid email or password');
+      toast.error('Invalid credentials');
       return false;
     }
 
