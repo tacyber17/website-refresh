@@ -13,12 +13,12 @@ const Login = () => {
   const navigate = useNavigate();
   const { login, signup } = useAuth();
   
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [loginData, setLoginData] = useState({ email: '', password: '', phone: '' });
   const [signupData, setSignupData] = useState({ email: '', password: '', name: '', phone: '' });
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(loginData.email, loginData.password)) {
+    if (login(loginData.email, loginData.password, loginData.phone)) {
       navigate('/');
     }
   };
@@ -56,6 +56,17 @@ const Login = () => {
                       placeholder="your@email.com"
                       value={loginData.email}
                       onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-phone">Phone Number</Label>
+                    <Input
+                      id="login-phone"
+                      type="tel"
+                      placeholder="+1 (555) 000-0000"
+                      value={loginData.phone}
+                      onChange={(e) => setLoginData({ ...loginData, phone: e.target.value })}
                       required
                     />
                   </div>
