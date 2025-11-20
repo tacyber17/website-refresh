@@ -115,9 +115,11 @@ const Cart = () => {
                 </div>
               </div>
 
-              <Button className="w-full gradient-primary text-primary-foreground hover:opacity-90 shadow-glow mb-4">
-                Proceed to Checkout
-              </Button>
+              <Link to="/checkout" className="w-full">
+                <Button className="w-full gradient-primary text-primary-foreground hover:opacity-90 shadow-glow mb-4">
+                  Proceed to Checkout
+                </Button>
+              </Link>
 
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p className="flex items-center gap-2">
