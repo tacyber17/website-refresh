@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const CustomerHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { getCartCount } = useCart();
+  const { isAuthenticated, user } = useAuth();
   const cartCount = getCartCount();
 
   return (
@@ -51,9 +53,18 @@ export const CustomerHeader = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="hidden md:flex">
-              <User className="h-5 w-5" />
-            </Button>
+            {isAuthenticated ? (
+              <Link to="/account">
+                <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>{user?.name}</span>
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/login" className="hidden md:block">
+                <Button variant="default" size="sm">Login</Button>
+              </Link>
+            )}
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
