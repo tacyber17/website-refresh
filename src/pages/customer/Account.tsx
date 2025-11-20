@@ -5,28 +5,53 @@ import { Footer } from '@/components/customer/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Package, User, LogOut, Shield, ShieldCheck } from 'lucide-react';
+import { Package, User, LogOut, Shield, ShieldCheck, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const Account = () => {
-  const { user, orders, logout, isAuthenticated, loading } = useAuth();
+  const { orders, logout, session } = useAuth();
   const navigate = useNavigate();
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [isLoadingMFA, setIsLoadingMFA] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   useEffect(() => {
-    console.log('Account page - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user);
-    
-    if (!loading && !isAuthenticated) {
-      console.log('Redirecting to login - not authenticated');
+    // Check authentication
+    if (!session) {
       navigate('/login');
-    } else if (!loading && isAuthenticated) {
-      console.log('Authenticated, checking MFA');
-      checkMFAStatus();
+      return;
     }
-  }, [isAuthenticated, loading, navigate]);
+
+    // Fetch profile
+    fetchProfile();
+    checkMFAStatus();
+  }, [session, navigate]);
+
+  const fetchProfile = async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Profile fetch error:', error);
+        toast.error('Failed to load profile');
+      } else if (data) {
+        setProfile(data);
+      }
+    } catch (err) {
+      console.error('Profile fetch exception:', err);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
 
   const checkMFAStatus = async () => {
     try {
@@ -40,13 +65,6 @@ const Account = () => {
       setIsLoadingMFA(false);
     }
   };
-
-  if (loading) return null;
-  
-  if (!user && isAuthenticated) {
-    // Still loading user profile
-    return null;
-  }
 
   const handleLogout = async () => {
     await logout();
@@ -87,6 +105,39 @@ const Account = () => {
     }
   };
 
+  // Show loading state
+  if (isLoadingProfile) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <CustomerHeader />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show error if no profile
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <CustomerHeader />
+        <main className="flex-1 container mx-auto px-4 py-12">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">Failed to load profile. Please try refreshing the page.</p>
+              <div className="flex justify-center mt-4">
+                <Button onClick={() => navigate('/login')}>Back to Login</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <CustomerHeader />
@@ -110,16 +161,16 @@ const Account = () => {
             <CardContent className="space-y-2">
               <div>
                 <p className="text-sm text-muted-foreground">Name</p>
-                <p className="font-medium">{user.name}</p>
+                <p className="font-medium">{profile.full_name || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">{user.email}</p>
+                <p className="font-medium">{profile.email}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Member Since</p>
                 <p className="font-medium">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {new Date(profile.created_at).toLocaleDateString()}
                 </p>
               </div>
             </CardContent>
@@ -160,7 +211,6 @@ const Account = () => {
             </CardContent>
           </Card>
 
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -200,7 +250,7 @@ const Account = () => {
                         </Badge>
                       </div>
                       <div className="space-y-2">
-                        {order.items.map((item, idx) => (
+                        {order.items.map((item: any, idx: number) => (
                           <div key={idx} className="flex justify-between text-sm">
                             <span>
                               {item.name} x {item.quantity}
