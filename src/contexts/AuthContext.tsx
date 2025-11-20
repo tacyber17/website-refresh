@@ -52,34 +52,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           console.log('Fetching profile for user:', session.user.id);
           // Fetch user profile from profiles table
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-          }
-          
-          console.log('Profile fetched:', profile);
-          
-          if (profile) {
-            const userData = {
-              id: session.user.id,
-              email: profile.email,
-              name: profile.full_name || '',
-              createdAt: profile.created_at,
-            };
-            console.log('Setting user:', userData);
-            setUser(userData);
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .maybeSingle();
             
-            // Fetch orders from database
-            setTimeout(() => {
-              loadOrders(session.user.id);
-            }, 0);
-          } else {
-            console.log('No profile found for user');
+            console.log('Profile query result - data:', profile, 'error:', profileError);
+            
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+            }
+            
+            console.log('Profile fetched:', profile);
+            
+            if (profile) {
+              const userData = {
+                id: session.user.id,
+                email: profile.email,
+                name: profile.full_name || '',
+                createdAt: profile.created_at,
+              };
+              console.log('Setting user:', userData);
+              setUser(userData);
+              
+              // Fetch orders from database
+              setTimeout(() => {
+                loadOrders(session.user.id);
+              }, 0);
+            } else {
+              console.log('No profile found for user');
+            }
+          } catch (err) {
+            console.error('Exception fetching profile:', err);
           }
         } else {
           console.log('No session, clearing user');
