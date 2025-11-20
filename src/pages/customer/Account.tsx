@@ -5,24 +5,64 @@ import { Footer } from '@/components/customer/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Package, User, LogOut } from 'lucide-react';
-import { useEffect } from 'react';
+import { Package, User, LogOut, Shield, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Account = () => {
   const { user, orders, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [isLoadingMFA, setIsLoadingMFA] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
+    } else {
+      checkMFAStatus();
     }
   }, [isAuthenticated, navigate]);
 
+  const checkMFAStatus = async () => {
+    try {
+      const { data } = await supabase.auth.mfa.listFactors();
+      if (data?.totp && data.totp.length > 0) {
+        setMfaEnabled(true);
+      }
+    } catch (error) {
+      console.error('Error checking MFA status:', error);
+    } finally {
+      setIsLoadingMFA(false);
+    }
+  };
+
   if (!user) return null;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
+  };
+
+  const handleEnableMFA = () => {
+    navigate('/mfa-enrollment');
+  };
+
+  const handleDisableMFA = async () => {
+    try {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      if (factors?.totp && factors.totp.length > 0) {
+        const factor = factors.totp[0];
+        const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+        
+        if (error) throw error;
+        
+        setMfaEnabled(false);
+        toast.success('MFA disabled successfully');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to disable MFA');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -75,6 +115,42 @@ const Account = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                Security
+              </CardTitle>
+              <CardDescription>
+                Manage your account security settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className={`w-5 h-5 ${mfaEnabled ? 'text-green-500' : 'text-muted-foreground'}`} />
+                  <div>
+                    <p className="font-medium">Two-Factor Authentication</p>
+                    <p className="text-sm text-muted-foreground">
+                      {mfaEnabled 
+                        ? 'MFA is enabled on your account' 
+                        : 'Add an extra layer of security to your account'}
+                    </p>
+                  </div>
+                </div>
+                {!isLoadingMFA && (
+                  <Button
+                    onClick={mfaEnabled ? handleDisableMFA : handleEnableMFA}
+                    variant={mfaEnabled ? 'outline' : 'default'}
+                  >
+                    {mfaEnabled ? 'Disable' : 'Enable'}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
 
           <Card>
             <CardHeader>

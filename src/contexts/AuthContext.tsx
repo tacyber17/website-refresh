@@ -138,6 +138,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.session) {
+        // Check if MFA is enabled for this user
+        const { data: factors } = await supabase.auth.mfa.listFactors();
+        
+        if (factors?.totp && factors.totp.length > 0) {
+          // MFA is enabled, user needs to verify
+          // Don't show success message yet, they'll be redirected to MFA verification
+          return true;
+        }
+        
         toast.success('Logged in successfully!');
         return true;
       }

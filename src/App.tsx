@@ -18,6 +18,8 @@ import { CartProvider } from "./contexts/CartContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import Login from "./pages/customer/Login";
 import Account from "./pages/customer/Account";
+import MFAEnrollment from "./pages/customer/MFAEnrollment";
+import MFAVerification from "./pages/customer/MFAVerification";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,9 @@ const App = () => (
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
           <Route path="/login" element={<Login />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/mfa-enrollment" element={<MFAEnrollment />} />
+          <Route path="/mfa-verification" element={<MFAVerification />} />
+
 
           {/* Admin Routes */}
           <Route path="/admin" element={
