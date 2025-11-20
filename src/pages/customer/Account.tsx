@@ -41,7 +41,12 @@ const Account = () => {
     }
   };
 
-  if (loading || !user) return null;
+  if (loading) return null;
+  
+  if (!user && isAuthenticated) {
+    // Still loading user profile
+    return null;
+  }
 
   const handleLogout = async () => {
     await logout();
