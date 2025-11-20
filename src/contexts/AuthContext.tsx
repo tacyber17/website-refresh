@@ -46,9 +46,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, 'session:', !!session);
         setSession(session);
         
         if (session?.user) {
+          console.log('Fetching profile for user:', session.user.id);
           // Fetch user profile from profiles table
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
@@ -60,20 +62,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('Error fetching profile:', profileError);
           }
           
+          console.log('Profile fetched:', profile);
+          
           if (profile) {
-            setUser({
+            const userData = {
               id: session.user.id,
               email: profile.email,
               name: profile.full_name || '',
               createdAt: profile.created_at,
-            });
+            };
+            console.log('Setting user:', userData);
+            setUser(userData);
             
             // Fetch orders from database
             setTimeout(() => {
               loadOrders(session.user.id);
             }, 0);
+          } else {
+            console.log('No profile found for user');
           }
         } else {
+          console.log('No session, clearing user');
           setUser(null);
           setOrders([]);
         }
@@ -82,9 +91,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', !!session);
       setSession(session);
       
       if (session?.user) {
+        console.log('Initial fetch profile for user:', session.user.id);
         supabase
           .from('profiles')
           .select('*')
@@ -95,20 +106,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error('Error fetching profile:', profileError);
             }
             
+            console.log('Initial profile fetched:', profile);
+            
             if (profile) {
-              setUser({
+              const userData = {
                 id: session.user.id,
                 email: profile.email,
                 name: profile.full_name || '',
                 createdAt: profile.created_at,
-              });
+              };
+              console.log('Setting initial user:', userData);
+              setUser(userData);
               
               // Fetch orders from database
               loadOrders(session.user.id);
             }
+            console.log('Setting loading to false');
             setLoading(false);
           });
       } else {
+        console.log('No initial session, setting loading to false');
         setLoading(false);
       }
     });

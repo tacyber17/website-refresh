@@ -17,9 +17,13 @@ const Account = () => {
   const [isLoadingMFA, setIsLoadingMFA] = useState(true);
 
   useEffect(() => {
+    console.log('Account page - loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user);
+    
     if (!loading && !isAuthenticated) {
+      console.log('Redirecting to login - not authenticated');
       navigate('/login');
     } else if (!loading && isAuthenticated) {
+      console.log('Authenticated, checking MFA');
       checkMFAStatus();
     }
   }, [isAuthenticated, loading, navigate]);
