@@ -2,20 +2,13 @@ import { CustomerHeader } from "@/components/customer/CustomerHeader";
 import { Footer } from "@/components/customer/Footer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus, Minus } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
-import headphonesImg from "@/assets/headphones.jpg";
-import smartwatchImg from "@/assets/smartwatch.jpg";
-import usbHubImg from "@/assets/usb-hub.jpg";
-
-const cartItems = [
-  { id: 1, name: "Premium Wireless Headphones", price: 129.99, quantity: 1, image: headphonesImg },
-  { id: 2, name: "Smart Watch Pro", price: 299.99, quantity: 1, image: smartwatchImg },
-  { id: 3, name: "USB-C Hub Pro", price: 79.99, quantity: 2, image: usbHubImg },
-];
+import { useCart } from "@/contexts/CartContext";
 
 const Cart = () => {
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const { items, removeFromCart, updateQuantity, getCartTotal } = useCart();
+  const subtotal = getCartTotal();
   const shipping = 10;
   const tax = subtotal * 0.1;
   const total = subtotal + shipping + tax;
@@ -27,10 +20,22 @@ const Cart = () => {
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-foreground mb-8">Shopping Cart</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
-            {cartItems.map((item) => (
+        {items.length === 0 ? (
+          <Card className="p-12 text-center animate-fade-in">
+            <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Your cart is empty</h2>
+            <p className="text-muted-foreground mb-6">Add some products to get started!</p>
+            <Link to="/shop">
+              <Button size="lg" className="gradient-primary text-primary-foreground hover:opacity-90">
+                Continue Shopping
+              </Button>
+            </Link>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Cart Items */}
+            <div className="lg:col-span-2 space-y-4">
+              {items.map((item) => (
               <Card key={item.id} className="p-4 animate-fade-in">
                 <div className="flex gap-4">
                   <div className="h-24 w-24 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
@@ -43,11 +48,19 @@ const Cart = () => {
                     
                     <div className="flex items-center gap-2">
                       <div className="flex items-center border border-border rounded-lg">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        >
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="px-3 text-sm font-medium">{item.quantity}</span>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        >
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
@@ -56,7 +69,12 @@ const Cart = () => {
 
                   <div className="flex flex-col items-end justify-between">
                     <p className="font-bold text-foreground">${(item.price * item.quantity).toFixed(2)}</p>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => removeFromCart(item.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -118,6 +136,7 @@ const Cart = () => {
             </Card>
           </div>
         </div>
+        )}
       </main>
 
       <Footer />

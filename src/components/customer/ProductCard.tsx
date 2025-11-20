@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductCardProps {
   id: number;
@@ -16,6 +17,18 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ id, name, price, image, category, rating = 4.5, isNew, discount }: ProductCardProps) => {
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    addToCart({
+      id,
+      name,
+      price: parseFloat(price.replace('$', '')),
+      image,
+    });
+  };
+
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in">
       <Link to={`/shop/product/${id}`}>
@@ -72,7 +85,11 @@ export const ProductCard = ({ id, name, price, image, category, rating = 4.5, is
 
         <div className="flex items-center justify-between">
           <p className="text-xl font-bold text-foreground">{price}</p>
-          <Button size="sm" className="gradient-primary text-primary-foreground hover:opacity-90">
+          <Button 
+            size="sm" 
+            className="gradient-primary text-primary-foreground hover:opacity-90"
+            onClick={handleAddToCart}
+          >
             <ShoppingCart className="h-4 w-4 mr-1" />
             Add
           </Button>
