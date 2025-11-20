@@ -29,6 +29,7 @@ interface AuthContextType {
   orders: Order[];
   addOrder: (order: Omit<Order, 'id' | 'date' | 'status'>) => void;
   session: Session | null;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -86,7 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 createdAt: profile.created_at,
               });
             }
+            setLoading(false);
           });
+      } else {
+        setLoading(false);
       }
     });
 
@@ -202,6 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         orders,
         addOrder,
         session,
+        loading,
       }}
     >
       {children}
