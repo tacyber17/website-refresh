@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import Users from "./pages/admin/Users";
 import Home from "./pages/customer/Home";
 import Shop from "./pages/customer/Shop";
 import ProductDetail from "./pages/customer/ProductDetail";
@@ -20,6 +21,7 @@ import Login from "./pages/customer/Login";
 import Account from "./pages/customer/Account";
 import MFAEnrollment from "./pages/customer/MFAEnrollment";
 import MFAVerification from "./pages/customer/MFAVerification";
+import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -47,28 +49,45 @@ const App = () => (
 
           {/* Admin Routes */}
           <Route path="/admin" element={
-            <div className="flex h-screen bg-gradient-subtle">
-              <Sidebar />
-              <div className="flex-1 flex flex-col lg:pl-64">
-                <Header />
-                <main className="flex-1 overflow-y-auto">
-                  <Dashboard />
-                </main>
+            <ProtectedAdminRoute>
+              <div className="flex h-screen bg-gradient-subtle">
+                <Sidebar />
+                <div className="flex-1 flex flex-col lg:pl-64">
+                  <Header />
+                  <main className="flex-1 overflow-y-auto">
+                    <Dashboard />
+                  </main>
+                </div>
               </div>
-            </div>
+            </ProtectedAdminRoute>
           } />
           <Route path="/admin/products" element={
-            <div className="flex h-screen bg-gradient-subtle">
-              <Sidebar />
-              <div className="flex-1 flex flex-col lg:pl-64">
-                <Header />
-                <main className="flex-1 overflow-y-auto">
-                  <Products />
-                </main>
+            <ProtectedAdminRoute>
+              <div className="flex h-screen bg-gradient-subtle">
+                <Sidebar />
+                <div className="flex-1 flex flex-col lg:pl-64">
+                  <Header />
+                  <main className="flex-1 overflow-y-auto">
+                    <Products />
+                  </main>
+                </div>
               </div>
-            </div>
+            </ProtectedAdminRoute>
           } />
-          
+          <Route path="/admin/users" element={
+            <ProtectedAdminRoute>
+              <div className="flex h-screen bg-gradient-subtle">
+                <Sidebar />
+                <div className="flex-1 flex flex-col lg:pl-64">
+                  <Header />
+                  <main className="flex-1 overflow-y-auto">
+                    <Users />
+                  </main>
+                </div>
+              </div>
+            </ProtectedAdminRoute>
+          } />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
