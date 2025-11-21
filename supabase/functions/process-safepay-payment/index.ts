@@ -45,17 +45,17 @@ serve(async (req) => {
       ? 'https://api.getsafepay.com'
       : 'https://sandbox.api.getsafepay.com';
 
-    // Create Safepay payment session using correct API
-    const sessionResponse = await fetch(`${safepayBaseUrl}/payments/v1/session`, {
+    // Create Safepay payment tracker using correct API v3
+    const sessionResponse = await fetch(`${safepayBaseUrl}/order/payments/v3/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${safepayApiKey}`,
       },
       body: JSON.stringify({
         merchant_api_key: safepayApiKey,
         intent: "CYBERSOURCE",
         mode: "payment",
+        entry_mode: "raw",
         currency: paymentData.currency,
         amount: Math.round(paymentData.amount * 100), // Convert to paisa/cents
         metadata: {
@@ -67,8 +67,8 @@ serve(async (req) => {
     });
 
     const responseText = await sessionResponse.text();
-    console.log('Safepay session response status:', sessionResponse.status);
-    console.log('Safepay session response:', responseText);
+    console.log('Safepay tracker response status:', sessionResponse.status);
+    console.log('Safepay tracker response:', responseText);
 
     if (!sessionResponse.ok) {
       console.error('Safepay API error - Status:', sessionResponse.status);
@@ -77,7 +77,7 @@ serve(async (req) => {
       let errorMessage = `Safepay API returned status ${sessionResponse.status}`;
       try {
         const errorData = JSON.parse(responseText);
-        errorMessage = errorData.message || errorData.error || responseText;
+        errorMessage = errorData.message || errorData.error || errorData.detail || responseText;
       } catch (e) {
         errorMessage = responseText || errorMessage;
       }
@@ -90,10 +90,10 @@ serve(async (req) => {
       sessionData = JSON.parse(responseText);
     } catch (e) {
       console.error('Failed to parse Safepay response:', responseText);
-      throw new Error(`Invalid JSON response from Safepay: ${responseText}`);
+      throw new Error(`Invalid JSON response from Safepay: ${responseText.substring(0, 200)}`);
     }
 
-    console.log('Safepay session created:', sessionData);
+    console.log('Safepay tracker created:', sessionData);
 
     // Get the tracker token from the session
     const trackerToken = sessionData.data?.token;
