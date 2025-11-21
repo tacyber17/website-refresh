@@ -1,128 +1,192 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
-
-interface User {
-  email: string;
-  name: string;
-  phone: string;
-  createdAt: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
 interface Order {
   id: string;
-  date: string;
+  user_id: string;
+  created_at: string;
   total: number;
   items: any[];
-  shippingAddress: any;
-  paymentMethod: string;
+  shipping_address: any;
+  payment_method: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered';
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, phone: string) => boolean;
-  signup: (email: string, password: string, name: string, phone: string) => boolean;
-  logout: () => void;
+  session: Session | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (email: string, password: string, name: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'date' | 'status'>) => void;
+  addOrder: (order: { items: any[], shippingAddress: any, paymentMethod: string, total: number }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      loadOrders(parsedUser.email);
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        setTimeout(() => {
+          loadOrders();
+        }, 0);
+      } else {
+        setOrders([]);
+      }
+    });
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadOrders();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const loadOrders = (email: string) => {
-    const userOrders = localStorage.getItem(`orders_${email}`);
-    if (userOrders) {
-      setOrders(JSON.parse(userOrders));
+  const loadOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      if (data) {
+        setOrders(data.map(order => ({
+          id: order.id,
+          user_id: order.user_id,
+          created_at: order.created_at,
+          total: Number(order.total),
+          items: [],
+          shipping_address: {},
+          payment_method: '',
+          status: order.status as any,
+        })));
+      }
+    } catch (error: any) {
+      console.error('Error loading orders:', error);
     }
   };
 
-  const signup = (email: string, password: string, name: string, phone: string): boolean => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    if (users.find((u: any) => u.email === email)) {
-      toast.error('User already exists');
+  const signup = async (email: string, password: string, name: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: name,
+          }
+        }
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return false;
+      }
+
+      toast.success('Account created successfully! Please check your email.');
+      return true;
+    } catch (error: any) {
+      toast.error(error.message);
       return false;
     }
-
-    const newUser: User = {
-      email,
-      name,
-      phone,
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push({ ...newUser, password });
-    localStorage.setItem('users', JSON.stringify(users));
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    setUser(newUser);
-    setOrders([]);
-    toast.success('Account created successfully!');
-    return true;
   };
 
-  const login = (email: string, password: string, phone: string): boolean => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const foundUser = users.find((u: any) => u.email === email && u.password === password && u.phone === phone);
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (!foundUser) {
-      toast.error('Invalid credentials');
+      if (error) {
+        toast.error('Invalid credentials');
+        return false;
+      }
+
+      toast.success('Logged in successfully!');
+      return true;
+    } catch (error: any) {
+      toast.error(error.message);
       return false;
     }
-
-    const user: User = {
-      email: foundUser.email,
-      name: foundUser.name,
-      phone: foundUser.phone,
-      createdAt: foundUser.createdAt,
-    };
-
-    localStorage.setItem('currentUser', JSON.stringify(user));
-    setUser(user);
-    loadOrders(email);
-    toast.success('Logged in successfully!');
-    return true;
   };
 
-  const logout = () => {
-    localStorage.removeItem('currentUser');
-    setUser(null);
-    setOrders([]);
-    toast.success('Logged out successfully');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setOrders([]);
+      toast.success('Logged out successfully');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
-  const addOrder = (orderData: Omit<Order, 'id' | 'date' | 'status'>) => {
+  const addOrder = async (orderData: { items: any[], shippingAddress: any, paymentMethod: string, total: number }) => {
     if (!user) return;
 
-    const newOrder: Order = {
-      ...orderData,
-      id: crypto.randomUUID(),
-      date: new Date().toISOString(),
-      status: 'pending',
-    };
+    try {
+      const encryptionKey = import.meta.env.VITE_ENCRYPTION_KEY;
+      
+      // Call the encryption function
+      const { data: encryptedData, error: encryptError } = await supabase
+        .rpc('encrypt_order_data', {
+          p_shipping_address: orderData.shippingAddress,
+          p_payment_method: orderData.paymentMethod,
+          p_items: orderData.items,
+          p_encryption_key: encryptionKey,
+        });
 
-    const updatedOrders = [newOrder, ...orders];
-    setOrders(updatedOrders);
-    localStorage.setItem(`orders_${user.email}`, JSON.stringify(updatedOrders));
+      if (encryptError) throw encryptError;
+
+      // Insert the encrypted order
+      const { error: insertError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          shipping_address: encryptedData[0].encrypted_shipping,
+          payment_method: encryptedData[0].encrypted_payment,
+          items: encryptedData[0].encrypted_items,
+          total: orderData.total,
+          status: 'pending',
+        });
+
+      if (insertError) throw insertError;
+
+      await loadOrders();
+      toast.success('Order placed successfully!');
+    } catch (error: any) {
+      console.error('Error adding order:', error);
+      toast.error('Failed to place order');
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        session,
         login,
         signup,
         logout,
