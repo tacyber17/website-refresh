@@ -15,6 +15,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 const shippingSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(50),
@@ -32,11 +33,11 @@ type ShippingFormData = z.infer<typeof shippingSchema>;
 
 const Checkout = () => {
   const { items, getCartTotal, clearCart } = useCart();
-  const { isAuthenticated, addOrder } = useAuth();
+  const { user, isAuthenticated, addOrder } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [paymentMethod, setPaymentMethod] = useState("safepay");
   const [shippingData, setShippingData] = useState<ShippingFormData | null>(null);
 
   const {
@@ -85,7 +86,7 @@ const Checkout = () => {
       return;
     }
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       toast({
         title: "Login Required",
         description: "Please login to complete your order",
@@ -95,29 +96,79 @@ const Checkout = () => {
       return;
     }
 
-    // Store order data for confirmation page
-    const orderData = {
-      orderNumber: `ORD-${Date.now()}`,
-      items,
-      shippingData,
-      paymentMethod,
-      subtotal,
-      shipping,
-      tax,
-      total,
-      orderDate: new Date().toISOString(),
-    };
+    if (paymentMethod !== "safepay") {
+      toast({
+        title: "Payment Method Required",
+        description: "Please select Safepay as your payment method",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    await addOrder({
-      items,
-      shippingAddress: shippingData,
-      paymentMethod,
-      total,
-    });
+    try {
+      // Create order first
+      await addOrder({
+        items,
+        shippingAddress: shippingData,
+        paymentMethod,
+        total,
+      });
 
-    localStorage.setItem("lastOrder", JSON.stringify(orderData));
-    clearCart();
-    navigate("/order-confirmation");
+      // Get the most recent order ID
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const orderId = orders?.[0]?.id;
+
+      if (!orderId) {
+        throw new Error('Failed to create order');
+      }
+
+      // Process Safepay payment
+      const { data, error } = await supabase.functions.invoke('process-safepay-payment', {
+        body: {
+          orderId,
+          amount: total,
+          currency: 'PKR',
+          customerEmail: user.email,
+          customerName: `${shippingData.firstName} ${shippingData.lastName}`,
+          shippingAddress: shippingData,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.checkout_url) {
+        // Save order data for confirmation page
+        const orderData = {
+          orderNumber: orderId,
+          items,
+          shippingData,
+          paymentMethod,
+          subtotal,
+          shipping,
+          tax,
+          total,
+          safepayToken: data.token,
+          orderDate: new Date().toISOString(),
+        };
+        localStorage.setItem("lastOrder", JSON.stringify(orderData));
+
+        // Redirect to Safepay checkout
+        window.location.href = data.checkout_url;
+      }
+    } catch (error) {
+      console.error("Error placing order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process payment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -291,34 +342,16 @@ const Checkout = () => {
                 <h2 className="text-xl font-bold text-foreground mb-6">Payment Method</h2>
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
                   <div className="flex items-center space-x-3 border border-border rounded-lg p-4 cursor-pointer hover:border-primary">
-                    <RadioGroupItem value="card" id="card" />
-                    <Label htmlFor="card" className="flex-1 cursor-pointer">
+                    <RadioGroupItem value="safepay" id="safepay" />
+                    <Label htmlFor="safepay" className="flex-1 cursor-pointer">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-5 w-5" />
                         <div>
-                          <p className="font-medium">Credit/Debit Card</p>
-                          <p className="text-sm text-muted-foreground">Pay securely with your card</p>
+                          <p className="font-medium">Safepay - Secure Payment</p>
+                          <p className="text-sm text-muted-foreground">
+                            Pay securely with cards, mobile wallets, and bank transfers
+                          </p>
                         </div>
-                      </div>
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-3 border border-border rounded-lg p-4 cursor-pointer hover:border-primary">
-                    <RadioGroupItem value="paypal" id="paypal" />
-                    <Label htmlFor="paypal" className="flex-1 cursor-pointer">
-                      <div>
-                        <p className="font-medium">PayPal</p>
-                        <p className="text-sm text-muted-foreground">Fast and secure PayPal checkout</p>
-                      </div>
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-3 border border-border rounded-lg p-4 cursor-pointer hover:border-primary">
-                    <RadioGroupItem value="cod" id="cod" />
-                    <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                      <div>
-                        <p className="font-medium">Cash on Delivery</p>
-                        <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
                       </div>
                     </Label>
                   </div>
@@ -356,7 +389,7 @@ const Checkout = () => {
 
                 <Card className="p-6">
                   <h2 className="text-xl font-bold text-foreground mb-4">Payment Method</h2>
-                  <p className="text-sm capitalize">{paymentMethod === "card" ? "Credit/Debit Card" : paymentMethod === "paypal" ? "PayPal" : "Cash on Delivery"}</p>
+                  <p className="text-sm">Safepay - Secure Payment</p>
                   <Button variant="outline" size="sm" onClick={() => setStep(2)} className="mt-4">
                     Edit
                   </Button>

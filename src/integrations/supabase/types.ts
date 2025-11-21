@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          encrypted_details: string | null
+          id: string
+          order_id: string
+          payment_method: string | null
+          safepay_transaction_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          encrypted_details?: string | null
+          id?: string
+          order_id: string
+          payment_method?: string | null
+          safepay_transaction_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          encrypted_details?: string | null
+          id?: string
+          order_id?: string
+          payment_method?: string | null
+          safepay_transaction_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -127,6 +169,10 @@ export type Database = {
           encrypted_shipping: string
         }[]
       }
+      encrypt_payment_details: {
+        Args: { p_encryption_key: string; p_payment_details: Json }
+        Returns: string
+      }
       get_decrypted_orders: {
         Args: { p_encryption_key: string }
         Returns: {
@@ -137,6 +183,22 @@ export type Database = {
           shipping_address: Json
           status: string
           total: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_decrypted_payments: {
+        Args: { p_encryption_key: string }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          order_id: string
+          payment_details: Json
+          payment_method: string
+          safepay_transaction_id: string
+          status: string
           updated_at: string
           user_id: string
         }[]

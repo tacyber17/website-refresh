@@ -43,6 +43,8 @@ const OrderConfirmation = () => {
     const storedOrder = localStorage.getItem("lastOrder");
     if (storedOrder) {
       setOrderData(JSON.parse(storedOrder));
+      // Clear order data after loading
+      localStorage.removeItem("lastOrder");
     } else {
       navigate("/shop");
     }
@@ -95,13 +97,7 @@ const OrderConfirmation = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Payment Method</p>
-                <p className="font-medium text-foreground capitalize">
-                  {orderData.paymentMethod === "card" 
-                    ? "Credit/Debit Card" 
-                    : orderData.paymentMethod === "paypal" 
-                    ? "PayPal" 
-                    : "Cash on Delivery"}
-                </p>
+                <p className="font-medium text-foreground">Safepay - Secure Payment</p>
               </div>
             </div>
 
