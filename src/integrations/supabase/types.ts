@@ -18,9 +18,9 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          items: Json
+          items: string
           payment_method: string
-          shipping_address: Json
+          shipping_address: string
           status: string
           total: number
           updated_at: string
@@ -29,9 +29,9 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          items: Json
+          items: string
           payment_method: string
-          shipping_address: Json
+          shipping_address: string
           status?: string
           total: number
           updated_at?: string
@@ -40,9 +40,9 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          items?: Json
+          items?: string
           payment_method?: string
-          shipping_address?: Json
+          shipping_address?: string
           status?: string
           total?: number
           updated_at?: string
@@ -100,6 +100,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_all_decrypted_orders: {
+        Args: { p_encryption_key: string }
+        Returns: {
+          created_at: string
+          id: string
+          items: Json
+          payment_method: string
+          shipping_address: Json
+          status: string
+          total: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      encrypt_order_data: {
+        Args: {
+          p_encryption_key: string
+          p_items: Json
+          p_payment_method: string
+          p_shipping_address: Json
+        }
+        Returns: {
+          encrypted_items: string
+          encrypted_payment: string
+          encrypted_shipping: string
+        }[]
+      }
+      get_decrypted_orders: {
+        Args: { p_encryption_key: string }
+        Returns: {
+          created_at: string
+          id: string
+          items: Json
+          payment_method: string
+          shipping_address: Json
+          status: string
+          total: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
