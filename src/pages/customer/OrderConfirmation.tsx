@@ -97,7 +97,7 @@ const OrderConfirmation = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Payment Method</p>
-                <p className="font-medium text-foreground">Safepay - Secure Payment</p>
+                <p className="font-medium text-foreground">{orderData.paymentMethod}</p>
               </div>
             </div>
 
