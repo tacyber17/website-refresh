@@ -57,7 +57,7 @@ export const CustomerHeader = () => {
               <Link to="/account">
                 <Button variant="ghost" size="sm" className="hidden md:flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  <span>{user?.name}</span>
+                  <span>Account</span>
                 </Button>
               </Link>
             ) : (

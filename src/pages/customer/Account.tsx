@@ -20,8 +20,8 @@ const Account = () => {
 
   if (!user) return null;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -60,21 +60,13 @@ const Account = () => {
             </CardHeader>
             <CardContent className="space-y-2">
               <div>
-                <p className="text-sm text-muted-foreground">Name</p>
-                <p className="font-medium">{user.name}</p>
-              </div>
-              <div>
                 <p className="text-sm text-muted-foreground">Email</p>
                 <p className="font-medium">{user.email}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Phone</p>
-                <p className="font-medium">{user.phone}</p>
-              </div>
-              <div>
                 <p className="text-sm text-muted-foreground">Member Since</p>
                 <p className="font-medium">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {new Date(user.created_at || '').toLocaleDateString()}
                 </p>
               </div>
             </CardContent>
@@ -111,33 +103,19 @@ const Account = () => {
                         <div>
                           <p className="font-semibold">Order #{order.id.slice(0, 8)}</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(order.date).toLocaleDateString()}
+                            {new Date(order.created_at).toLocaleDateString()}
                           </p>
                         </div>
                         <Badge className={getStatusColor(order.status)}>
                           {order.status}
                         </Badge>
                       </div>
-                      <div className="space-y-2">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-sm">
-                            <span>
-                              {item.name} x {item.quantity}
-                            </span>
-                            <span>${(item.price * item.quantity).toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
                       <div className="pt-2 border-t flex justify-between font-semibold">
                         <span>Total</span>
                         <span>${order.total.toFixed(2)}</span>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        <p>Payment: {order.paymentMethod}</p>
-                        <p>
-                          Shipping: {order.shippingAddress.address},{' '}
-                          {order.shippingAddress.city}
-                        </p>
+                        <p>Order details are encrypted for your security</p>
                       </div>
                     </div>
                   ))}

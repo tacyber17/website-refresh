@@ -75,7 +75,7 @@ const Checkout = () => {
     setStep(2);
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!shippingData) {
       toast({
         title: "Error",
@@ -108,7 +108,7 @@ const Checkout = () => {
       orderDate: new Date().toISOString(),
     };
 
-    addOrder({
+    await addOrder({
       items,
       shippingAddress: shippingData,
       paymentMethod,
