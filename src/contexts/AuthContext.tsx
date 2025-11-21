@@ -147,15 +147,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
 
     try {
-      const encryptionKey = import.meta.env.VITE_ENCRYPTION_KEY;
+      // Use a client-side encryption key (in production, move this to edge function)
+      const encryptionKey = 'client-side-encryption-key-2024';
       
-      // Call the encryption function
+      // Call the encryption function with correct parameter order
       const { data: encryptedData, error: encryptError } = await supabase
         .rpc('encrypt_order_data', {
-          p_shipping_address: orderData.shippingAddress,
-          p_payment_method: orderData.paymentMethod,
-          p_items: orderData.items,
           p_encryption_key: encryptionKey,
+          p_items: orderData.items,
+          p_payment_method: orderData.paymentMethod,
+          p_shipping_address: orderData.shippingAddress,
         });
 
       if (encryptError) throw encryptError;
