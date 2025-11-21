@@ -156,33 +156,19 @@ export type Database = {
           user_id: string
         }[]
       }
-      encrypt_order_data:
-        | {
-            Args: {
-              p_encryption_key: string
-              p_items: Json
-              p_payment_method: string
-              p_shipping_address: Json
-            }
-            Returns: {
-              encrypted_items: string
-              encrypted_payment: string
-              encrypted_shipping: string
-            }[]
-          }
-        | {
-            Args: {
-              p_encryption_key: string
-              p_items: Json
-              p_payment_method: string
-              p_shipping_address: Json
-            }
-            Returns: {
-              encrypted_items: string
-              encrypted_payment: string
-              encrypted_shipping: string
-            }[]
-          }
+      encrypt_order_data: {
+        Args: {
+          p_encryption_key: string
+          p_items: Json
+          p_payment_method: string
+          p_shipping_address: Json
+        }
+        Returns: {
+          encrypted_items: string
+          encrypted_payment: string
+          encrypted_shipping: string
+        }[]
+      }
       encrypt_payment_details: {
         Args: { p_encryption_key: string; p_payment_details: Json }
         Returns: string
