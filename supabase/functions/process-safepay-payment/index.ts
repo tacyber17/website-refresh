@@ -93,10 +93,12 @@ serve(async (req) => {
 
     console.log('Safepay tracker created:', sessionData);
 
-    // Get the tracker token from the session
-    const trackerToken = sessionData.data?.token;
+    // Get the tracker token from the response
+    // The v3 API returns the token directly in the data object
+    const trackerToken = sessionData.data?.token || sessionData.token || sessionData.data?.tracker;
 
     if (!trackerToken) {
+      console.error('No token found in Safepay response. Full response:', JSON.stringify(sessionData));
       throw new Error('No tracker token received from Safepay');
     }
 
