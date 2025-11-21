@@ -144,11 +144,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addOrder = async (orderData: { items: any[], shippingAddress: any, paymentMethod: string, total: number }) => {
-    if (!user) return;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
 
     try {
       // Use a client-side encryption key (in production, move this to edge function)
       const encryptionKey = 'client-side-encryption-key-2024';
+      
+      console.log('Starting order encryption...');
       
       // Call the encryption function with correct parameter order
       const { data: encryptedData, error: encryptError } = await supabase
@@ -159,9 +163,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           p_shipping_address: orderData.shippingAddress,
         });
 
-      if (encryptError) throw encryptError;
+      if (encryptError) {
+        console.error('Encryption error:', encryptError);
+        throw encryptError;
+      }
 
-      // Insert the encrypted order
+      if (!encryptedData || encryptedData.length === 0) {
+        throw new Error('Encryption returned no data');
+      }
+
+      console.log('Encryption successful, inserting order...');
+
+      // Insert the encrypted order - the encrypted data is base64 text
       const { error: insertError } = await supabase
         .from('orders')
         .insert({
@@ -173,13 +186,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           status: 'pending',
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw insertError;
+      }
 
+      console.log('Order inserted successfully');
       await loadOrders();
       toast.success('Order placed successfully!');
     } catch (error: any) {
       console.error('Error adding order:', error);
-      toast.error('Failed to place order');
+      toast.error('Failed to place order: ' + (error.message || 'Unknown error'));
+      throw error;
     }
   };
 
