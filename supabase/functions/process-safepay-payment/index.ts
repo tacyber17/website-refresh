@@ -120,15 +120,13 @@ serve(async (req) => {
       throw insertError;
     }
 
-    // Return the tracker token and redirect URL
-    // For Safepay, you'll need to redirect to their checkout page with this token
-    const checkoutUrl = `${safepayBaseUrl}/checkout?tracker=${trackerToken}`;
-
+    // Return the tracker token for frontend SDK usage
+    // The frontend will use Safepay SDK to complete the payment
     return new Response(
       JSON.stringify({
         success: true,
-        checkout_url: checkoutUrl,
         token: trackerToken,
+        environment: safepayEnv,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

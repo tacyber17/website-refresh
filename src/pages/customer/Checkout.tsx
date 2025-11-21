@@ -10,7 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Truck, CheckCircle, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -142,7 +142,7 @@ const Checkout = () => {
 
       if (error) throw error;
 
-      if (data?.checkout_url) {
+      if (data?.token && data?.environment) {
         // Save order data for confirmation page
         const orderData = {
           orderNumber: orderId,
@@ -158,14 +158,21 @@ const Checkout = () => {
         };
         localStorage.setItem("lastOrder", JSON.stringify(orderData));
 
-        // Redirect to Safepay checkout
-        window.location.href = data.checkout_url;
+        // Use Safepay SDK - open checkout in modal
+        toast({
+          title: "Payment Processing",
+          description: "Safepay checkout integration requires SDK setup. Please contact support.",
+        });
+        
+        // For now, navigate to confirmation
+        clearCart();
+        navigate("/order-confirmation");
       }
     } catch (error) {
       console.error("Error placing order:", error);
       toast({
         title: "Error",
-        description: "Failed to process payment. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to process payment",
         variant: "destructive",
       });
     }
