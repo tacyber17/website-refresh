@@ -60,8 +60,6 @@ serve(async (req) => {
         amount: Math.round(paymentData.amount * 100), // Convert to paisa/cents
         metadata: {
           order_id: paymentData.orderId,
-          customer_email: paymentData.customerEmail,
-          customer_name: paymentData.customerName,
         },
       }),
     });
