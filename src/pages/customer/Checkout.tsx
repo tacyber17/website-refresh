@@ -37,8 +37,14 @@ const Checkout = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState("safepay");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [shippingData, setShippingData] = useState<ShippingFormData | null>(null);
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    cardName: "",
+  });
 
   const {
     register,
@@ -96,77 +102,160 @@ const Checkout = () => {
       return;
     }
 
-    if (paymentMethod !== "safepay") {
-      toast({
-        title: "Payment Method Required",
-        description: "Please select Safepay as your payment method",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      // Create order first
-      await addOrder({
-        items,
-        shippingAddress: shippingData,
-        paymentMethod,
-        total,
-      });
-
-      // Get the most recent order ID
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      const orderId = orders?.[0]?.id;
-
-      if (!orderId) {
-        throw new Error('Failed to create order');
-      }
-
-      // Process Safepay payment
-      const { data, error } = await supabase.functions.invoke('process-safepay-payment', {
-        body: {
-          orderId,
-          amount: total,
-          currency: 'PKR',
-          customerEmail: user.email,
-          customerName: `${shippingData.firstName} ${shippingData.lastName}`,
+      // For Cash on Delivery, just create the order
+      if (paymentMethod === "cod") {
+        await addOrder({
+          items,
           shippingAddress: shippingData,
-        },
-      });
+          paymentMethod: "Cash on Delivery",
+          total,
+        });
 
-      if (error) throw error;
+        // Get the most recent order ID
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      if (data?.token && data?.environment) {
+        const orderId = orders?.[0]?.id;
+
         // Save order data for confirmation page
         const orderData = {
           orderNumber: orderId,
           items,
           shippingData,
-          paymentMethod,
+          paymentMethod: "Cash on Delivery",
           subtotal,
           shipping,
           tax,
           total,
-          safepayToken: data.token,
           orderDate: new Date().toISOString(),
         };
         localStorage.setItem("lastOrder", JSON.stringify(orderData));
 
-        // Use Safepay SDK - open checkout in modal
-        toast({
-          title: "Payment Processing",
-          description: "Safepay checkout integration requires SDK setup. Please contact support.",
-        });
-        
-        // For now, navigate to confirmation
         clearCart();
         navigate("/order-confirmation");
+        return;
+      }
+
+      // For Card payment, create order with card payment method
+      if (paymentMethod === "card") {
+        // Validate card details
+        if (!cardDetails.cardNumber || !cardDetails.expiryDate || !cardDetails.cvv || !cardDetails.cardName) {
+          toast({
+            title: "Card Details Required",
+            description: "Please fill in all card details",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        await addOrder({
+          items,
+          shippingAddress: shippingData,
+          paymentMethod: "Credit/Debit Card",
+          total,
+        });
+
+        // Get the most recent order ID
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        const orderId = orders?.[0]?.id;
+
+        // Save order data for confirmation page
+        const orderData = {
+          orderNumber: orderId,
+          items,
+          shippingData,
+          paymentMethod: "Credit/Debit Card",
+          subtotal,
+          shipping,
+          tax,
+          total,
+          orderDate: new Date().toISOString(),
+        };
+        localStorage.setItem("lastOrder", JSON.stringify(orderData));
+
+        toast({
+          title: "Payment Successful",
+          description: "Your order has been placed successfully",
+        });
+
+        clearCart();
+        navigate("/order-confirmation");
+        return;
+      }
+
+      // For Safepay
+      if (paymentMethod === "safepay") {
+        // Create order first
+        await addOrder({
+          items,
+          shippingAddress: shippingData,
+          paymentMethod: "Safepay",
+          total,
+        });
+
+        // Get the most recent order ID
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        const orderId = orders?.[0]?.id;
+
+        if (!orderId) {
+          throw new Error('Failed to create order');
+        }
+
+        // Process Safepay payment
+        const { data, error } = await supabase.functions.invoke('process-safepay-payment', {
+          body: {
+            orderId,
+            amount: total,
+            currency: 'PKR',
+            customerEmail: user.email,
+            customerName: `${shippingData.firstName} ${shippingData.lastName}`,
+            shippingAddress: shippingData,
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.token && data?.environment) {
+          // Save order data for confirmation page
+          const orderData = {
+            orderNumber: orderId,
+            items,
+            shippingData,
+            paymentMethod: "Safepay",
+            subtotal,
+            shipping,
+            tax,
+            total,
+            safepayToken: data.token,
+            orderDate: new Date().toISOString(),
+          };
+          localStorage.setItem("lastOrder", JSON.stringify(orderData));
+
+          toast({
+            title: "Payment Processing",
+            description: "Safepay checkout integration requires SDK setup.",
+          });
+          
+          clearCart();
+          navigate("/order-confirmation");
+        }
       }
     } catch (error) {
       console.error("Error placing order:", error);
@@ -349,20 +438,120 @@ const Checkout = () => {
                 <h2 className="text-xl font-bold text-foreground mb-6">Payment Method</h2>
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
                   <div className="flex items-center space-x-3 border border-border rounded-lg p-4 cursor-pointer hover:border-primary">
+                    <RadioGroupItem value="cod" id="cod" />
+                    <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-5 w-5" />
+                        <div>
+                          <p className="font-medium">Cash on Delivery</p>
+                          <p className="text-sm text-muted-foreground">
+                            Pay with cash when your order arrives
+                          </p>
+                        </div>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-3 border border-border rounded-lg p-4 cursor-pointer hover:border-primary">
+                    <RadioGroupItem value="card" id="card" />
+                    <Label htmlFor="card" className="flex-1 cursor-pointer">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-5 w-5" />
+                        <div>
+                          <p className="font-medium">Credit/Debit Card</p>
+                          <p className="text-sm text-muted-foreground">
+                            Pay securely with your card
+                          </p>
+                        </div>
+                      </div>
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-3 border border-border rounded-lg p-4 cursor-pointer hover:border-primary">
                     <RadioGroupItem value="safepay" id="safepay" />
                     <Label htmlFor="safepay" className="flex-1 cursor-pointer">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-5 w-5" />
                         <div>
-                          <p className="font-medium">Safepay - Secure Payment</p>
+                          <p className="font-medium">Safepay</p>
                           <p className="text-sm text-muted-foreground">
-                            Pay securely with cards, mobile wallets, and bank transfers
+                            Pay with cards, mobile wallets, and bank transfers
                           </p>
                         </div>
                       </div>
                     </Label>
                   </div>
                 </RadioGroup>
+
+                {/* Card Details Form */}
+                {paymentMethod === "card" && (
+                  <div className="mt-6 space-y-4 animate-fade-in">
+                    <Separator />
+                    <h3 className="font-semibold text-foreground">Card Details</h3>
+                    
+                    <div>
+                      <Label htmlFor="cardName">Cardholder Name *</Label>
+                      <Input
+                        id="cardName"
+                        placeholder="John Doe"
+                        value={cardDetails.cardName}
+                        onChange={(e) => setCardDetails({ ...cardDetails, cardName: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="cardNumber">Card Number *</Label>
+                      <Input
+                        id="cardNumber"
+                        placeholder="1234 5678 9012 3456"
+                        value={cardDetails.cardNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\s/g, '');
+                          if (value.length <= 16 && /^\d*$/.test(value)) {
+                            setCardDetails({ ...cardDetails, cardNumber: value });
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="expiryDate">Expiry Date *</Label>
+                        <Input
+                          id="expiryDate"
+                          placeholder="MM/YY"
+                          value={cardDetails.expiryDate}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            let formatted = value;
+                            if (value.length >= 2) {
+                              formatted = value.slice(0, 2) + '/' + value.slice(2, 4);
+                            }
+                            if (formatted.length <= 5) {
+                              setCardDetails({ ...cardDetails, expiryDate: formatted });
+                            }
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="cvv">CVV *</Label>
+                        <Input
+                          id="cvv"
+                          type="password"
+                          placeholder="123"
+                          maxLength={3}
+                          value={cardDetails.cvv}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 3) {
+                              setCardDetails({ ...cardDetails, cvv: value });
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-3 mt-6">
                   <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
@@ -396,7 +585,11 @@ const Checkout = () => {
 
                 <Card className="p-6">
                   <h2 className="text-xl font-bold text-foreground mb-4">Payment Method</h2>
-                  <p className="text-sm">Safepay - Secure Payment</p>
+                  <p className="text-sm">
+                    {paymentMethod === "cod" && "Cash on Delivery"}
+                    {paymentMethod === "card" && "Credit/Debit Card"}
+                    {paymentMethod === "safepay" && "Safepay"}
+                  </p>
                   <Button variant="outline" size="sm" onClick={() => setStep(2)} className="mt-4">
                     Edit
                   </Button>
