@@ -68,13 +68,33 @@ serve(async (req) => {
       }),
     });
 
+    const responseText = await safepayResponse.text();
+    console.log('Safepay response status:', safepayResponse.status);
+    console.log('Safepay response:', responseText);
+
     if (!safepayResponse.ok) {
-      const errorData = await safepayResponse.text();
-      console.error('Safepay error:', errorData);
-      throw new Error(`Safepay API error: ${errorData}`);
+      console.error('Safepay API error - Status:', safepayResponse.status);
+      console.error('Safepay API error - Body:', responseText);
+      
+      let errorMessage = `Safepay API returned status ${safepayResponse.status}`;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || responseText;
+      } catch (e) {
+        errorMessage = responseText || errorMessage;
+      }
+      
+      throw new Error(`Safepay API error: ${errorMessage}`);
     }
 
-    const safepayData = await safepayResponse.json();
+    let safepayData;
+    try {
+      safepayData = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse Safepay response:', responseText);
+      throw new Error(`Invalid JSON response from Safepay: ${responseText}`);
+    }
+
     console.log('Safepay checkout created:', safepayData.data?.token);
 
     // Encrypt payment details
