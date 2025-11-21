@@ -25,7 +25,6 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const safepayApiKey = Deno.env.get('SAFEPAY_API_KEY')!;
     const safepayEnv = Deno.env.get('SAFEPAY_ENVIRONMENT') || 'sandbox';
-    const encryptionKey = Deno.env.get('ENCRYPTION_KEY')!;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -46,37 +45,36 @@ serve(async (req) => {
       ? 'https://api.getsafepay.com'
       : 'https://sandbox.api.getsafepay.com';
 
-    // Create Safepay checkout session
-    const safepayResponse = await fetch(`${safepayBaseUrl}/checkout/create`, {
+    // Create Safepay payment session using correct API
+    const sessionResponse = await fetch(`${safepayBaseUrl}/payments/v1/session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-SFPY-API-KEY': safepayApiKey,
+        'Authorization': `Bearer ${safepayApiKey}`,
       },
       body: JSON.stringify({
-        amount: Math.round(paymentData.amount * 100), // Convert to paisa
+        merchant_api_key: safepayApiKey,
+        intent: "CYBERSOURCE",
+        mode: "payment",
         currency: paymentData.currency,
-        order_id: paymentData.orderId,
-        source: 'web',
-        webhook_url: `${supabaseUrl}/functions/v1/safepay-webhook`,
-        redirect_url: `${Deno.env.get('VITE_SUPABASE_URL')}/order-confirmation`,
-        cancel_url: `${Deno.env.get('VITE_SUPABASE_URL')}/checkout`,
+        amount: Math.round(paymentData.amount * 100), // Convert to paisa/cents
         metadata: {
+          order_id: paymentData.orderId,
           customer_email: paymentData.customerEmail,
           customer_name: paymentData.customerName,
         },
       }),
     });
 
-    const responseText = await safepayResponse.text();
-    console.log('Safepay response status:', safepayResponse.status);
-    console.log('Safepay response:', responseText);
+    const responseText = await sessionResponse.text();
+    console.log('Safepay session response status:', sessionResponse.status);
+    console.log('Safepay session response:', responseText);
 
-    if (!safepayResponse.ok) {
-      console.error('Safepay API error - Status:', safepayResponse.status);
+    if (!sessionResponse.ok) {
+      console.error('Safepay API error - Status:', sessionResponse.status);
       console.error('Safepay API error - Body:', responseText);
       
-      let errorMessage = `Safepay API returned status ${safepayResponse.status}`;
+      let errorMessage = `Safepay API returned status ${sessionResponse.status}`;
       try {
         const errorData = JSON.parse(responseText);
         errorMessage = errorData.message || errorData.error || responseText;
@@ -87,30 +85,24 @@ serve(async (req) => {
       throw new Error(`Safepay API error: ${errorMessage}`);
     }
 
-    let safepayData;
+    let sessionData;
     try {
-      safepayData = JSON.parse(responseText);
+      sessionData = JSON.parse(responseText);
     } catch (e) {
       console.error('Failed to parse Safepay response:', responseText);
       throw new Error(`Invalid JSON response from Safepay: ${responseText}`);
     }
 
-    console.log('Safepay checkout created:', safepayData.data?.token);
+    console.log('Safepay session created:', sessionData);
 
-    // Encrypt payment details
-    const paymentDetails = {
-      safepay_token: safepayData.data?.token,
-      customer_email: paymentData.customerEmail,
-      customer_name: paymentData.customerName,
-      shipping_address: paymentData.shippingAddress,
-    };
+    // Get the tracker token from the session
+    const trackerToken = sessionData.data?.token;
 
-    const { data: encryptedDetails } = await supabase.rpc('encrypt_payment_details', {
-      p_payment_details: paymentDetails,
-      p_encryption_key: encryptionKey,
-    });
+    if (!trackerToken) {
+      throw new Error('No tracker token received from Safepay');
+    }
 
-    // Store payment record
+    // Store payment record with tracker token
     const { error: insertError } = await supabase
       .from('payments')
       .insert({
@@ -120,7 +112,7 @@ serve(async (req) => {
         currency: paymentData.currency,
         status: 'pending',
         payment_method: 'safepay',
-        encrypted_details: encryptedDetails,
+        safepay_transaction_id: trackerToken,
       });
 
     if (insertError) {
@@ -128,11 +120,15 @@ serve(async (req) => {
       throw insertError;
     }
 
+    // Return the tracker token and redirect URL
+    // For Safepay, you'll need to redirect to their checkout page with this token
+    const checkoutUrl = `${safepayBaseUrl}/checkout?tracker=${trackerToken}`;
+
     return new Response(
       JSON.stringify({
         success: true,
-        checkout_url: safepayData.data?.url,
-        token: safepayData.data?.token,
+        checkout_url: checkoutUrl,
+        token: trackerToken,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
