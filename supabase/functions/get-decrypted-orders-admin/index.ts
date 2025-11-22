@@ -25,21 +25,17 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create client with user's token to verify they're logged in
-    const supabaseClient = createClient(
+    // Create admin client to verify JWT and check role
+    const adminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Verifying user authentication')
+    console.log('Verifying JWT token')
     
-    // Check if user is authenticated
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    // Verify the JWT token using the admin client
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await adminClient.auth.getUser(token)
     
     console.log('Auth check result - User ID:', user?.id, 'Error:', authError?.message)
     
@@ -52,12 +48,6 @@ Deno.serve(async (req) => {
     }
 
     console.log('User authenticated, checking admin role for user:', user.id)
-    
-    // Create admin client to check role
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
 
     // Check if user has admin role
     const { data: roleData, error: roleError } = await adminClient
