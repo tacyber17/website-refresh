@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeOrderData, maskCardNumber } from "@/lib/encryption";
 
 const shippingSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(50),
@@ -122,8 +123,8 @@ const Checkout = () => {
 
         const orderId = orders?.[0]?.id;
 
-        // Save order data for confirmation page
-        const orderData = {
+        // Save order data for confirmation page (sanitized)
+        const orderData = sanitizeOrderData({
           orderNumber: orderId,
           items,
           shippingData,
@@ -133,7 +134,7 @@ const Checkout = () => {
           tax,
           total,
           orderDate: new Date().toISOString(),
-        };
+        });
         localStorage.setItem("lastOrder", JSON.stringify(orderData));
 
         clearCart();
@@ -170,18 +171,19 @@ const Checkout = () => {
 
         const orderId = orders?.[0]?.id;
 
-        // Save order data for confirmation page
-        const orderData = {
+        // Save order data for confirmation page (sanitized - no full card details)
+        const orderData = sanitizeOrderData({
           orderNumber: orderId,
           items,
           shippingData,
           paymentMethod: "Credit/Debit Card",
+          cardDetails,
           subtotal,
           shipping,
           tax,
           total,
           orderDate: new Date().toISOString(),
-        };
+        });
         localStorage.setItem("lastOrder", JSON.stringify(orderData));
 
         toast({
@@ -233,8 +235,8 @@ const Checkout = () => {
         if (error) throw error;
 
         if (data?.token && data?.environment) {
-          // Save order data for confirmation page
-          const orderData = {
+          // Save order data for confirmation page (sanitized)
+          const orderData = sanitizeOrderData({
             orderNumber: orderId,
             items,
             shippingData,
@@ -245,7 +247,7 @@ const Checkout = () => {
             total,
             safepayToken: data.token,
             orderDate: new Date().toISOString(),
-          };
+          });
           localStorage.setItem("lastOrder", JSON.stringify(orderData));
 
           toast({
