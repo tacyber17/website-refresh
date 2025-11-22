@@ -37,16 +37,12 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Use the same encryption key that was used to encrypt the orders
-      const encryptionKey = 'client-side-encryption-key-2024';
-      
-      const { data, error } = await supabase.rpc("admin_get_all_decrypted_orders", {
-        p_encryption_key: encryptionKey,
-      });
+      // Call edge function that uses the ENCRYPTION_KEY secret
+      const { data: response, error } = await supabase.functions.invoke('get-decrypted-orders-admin');
 
       if (error) throw error;
 
-      let filteredData = (data || []) as Order[];
+      let filteredData = (response?.data || []) as Order[];
 
       // Apply status filter
       if (selectedStatus !== "all") {
