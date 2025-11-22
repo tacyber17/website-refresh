@@ -238,6 +238,20 @@ export type Database = {
         }
         Returns: Json
       }
+      decrypt_single_order: {
+        Args: { p_encryption_key: string; p_order_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          items: Json
+          payment_method: string
+          shipping_address: Json
+          status: string
+          total: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
       encrypt_order_data: {
         Args: {
           p_encryption_key: string

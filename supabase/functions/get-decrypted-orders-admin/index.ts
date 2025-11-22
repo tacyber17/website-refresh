@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Use the ENCRYPTION_KEY from secrets
+    // Get the ENCRYPTION_KEY from secrets
     const encryptionKey = Deno.env.get('ENCRYPTION_KEY')
     
     if (!encryptionKey) {
@@ -78,25 +78,55 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Fetching orders for admin user:', user.id)
+    console.log('Fetching all orders for admin user:', user.id)
     
-    // Decrypt orders using the encryption key
-    const { data, error } = await adminClient.rpc('admin_get_all_decrypted_orders', {
-      p_encryption_key: encryptionKey
-    })
+    // Fetch all orders from the database
+    const { data: orders, error: ordersError } = await adminClient
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Decryption error:', error)
+    if (ordersError) {
+      console.error('Error fetching orders:', ordersError)
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: ordersError.message }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
-    console.log(`Successfully retrieved ${data?.length || 0} orders`)
+    console.log(`Fetched ${orders?.length || 0} orders, decrypting...`)
+
+    // Decrypt each order
+    const decryptedOrders = []
+    
+    for (const order of orders || []) {
+      try {
+        // Use the existing RPC function to decrypt this order
+        // We'll create a temporary admin context by using the service role
+        const { data: decrypted, error: decryptError } = await adminClient
+          .rpc('decrypt_single_order', {
+            p_encryption_key: encryptionKey,
+            p_order_id: order.id
+          })
+        
+        if (decryptError) {
+          console.error('Error decrypting order:', order.id, decryptError)
+          continue
+        }
+        
+        if (decrypted && decrypted.length > 0) {
+          decryptedOrders.push(decrypted[0])
+        }
+      } catch (err) {
+        console.error('Exception decrypting order:', order.id, err)
+        continue
+      }
+    }
+
+    console.log(`Successfully decrypted ${decryptedOrders.length} orders`)
 
     return new Response(
-      JSON.stringify({ data }),
+      JSON.stringify({ data: decryptedOrders }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
