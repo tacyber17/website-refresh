@@ -11,23 +11,56 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Create client with service role to check admin status
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - No auth header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Create client with user's token to verify they're logged in
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     )
 
-    // Check if user is admin
-    const { data: { user } } = await supabaseClient.auth.getUser()
+    // Check if user is authenticated
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     
-    if (!user) {
+    if (authError || !user) {
+      console.error('Auth error:', authError)
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Check if user has admin role
+    const { data: roleData, error: roleError } = await adminClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle()
+
+    if (roleError || !roleData) {
+      console.error('User is not an admin:', user.id)
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - Admin access required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
     }
 
@@ -42,14 +75,9 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('Fetching orders with encryption key from secrets')
+    console.log('Fetching orders for admin user:', user.id)
     
-    // Create admin client for RPC call
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
+    // Decrypt orders using the encryption key
     const { data, error } = await adminClient.rpc('admin_get_all_decrypted_orders', {
       p_encryption_key: encryptionKey
     })
