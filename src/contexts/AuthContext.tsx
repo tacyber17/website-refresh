@@ -150,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       // Use a client-side encryption key (in production, move this to edge function)
-      const encryptionKey = 'lovable-client-key-2024';
+      const encryptionKey = 'client-side-encryption-key-2024';
       
       console.log('Starting order encryption...');
       
