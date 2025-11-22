@@ -37,19 +37,31 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
+      console.log('Fetching orders - checking session...');
+      
       // Get the current session to include auth token
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      console.log('Session check:', { 
+        hasSession: !!session, 
+        userId: session?.user?.id,
+        error: sessionError 
+      });
       
       if (!session) {
-        throw new Error('Not authenticated');
+        throw new Error('Not authenticated. Please log in.');
       }
 
+      console.log('Calling edge function with auth token...');
+      
       // Call edge function with explicit authorization header
       const { data: response, error } = await supabase.functions.invoke('get-decrypted-orders-admin', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
+
+      console.log('Edge function response:', { response, error });
 
       if (error) {
         console.error('Edge function error:', error);

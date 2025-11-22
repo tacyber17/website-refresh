@@ -11,15 +11,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Create client with service role to check admin status
-    const adminClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
+    console.log('Edge function called - checking authorization')
+    
     // Get the authorization header
     const authHeader = req.headers.get('Authorization')
+    console.log('Auth header present:', !!authHeader)
+    
     if (!authHeader) {
+      console.error('No authorization header')
       return new Response(
         JSON.stringify({ error: 'Unauthorized - No auth header' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
@@ -37,16 +36,28 @@ Deno.serve(async (req) => {
       }
     )
 
+    console.log('Verifying user authentication')
+    
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     
+    console.log('Auth check result - User ID:', user?.id, 'Error:', authError?.message)
+    
     if (authError || !user) {
-      console.error('Auth error:', authError)
+      console.error('Auth verification failed:', authError)
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Invalid token' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
+
+    console.log('User authenticated, checking admin role for user:', user.id)
+    
+    // Create admin client to check role
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
     // Check if user has admin role
     const { data: roleData, error: roleError } = await adminClient
@@ -56,8 +67,10 @@ Deno.serve(async (req) => {
       .eq('role', 'admin')
       .maybeSingle()
 
+    console.log('Role check result:', roleData, 'Error:', roleError?.message)
+
     if (roleError || !roleData) {
-      console.error('User is not an admin:', user.id)
+      console.error('User is not an admin:', user.id, roleError)
       return new Response(
         JSON.stringify({ error: 'Forbidden - Admin access required' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
