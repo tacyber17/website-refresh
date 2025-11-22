@@ -8,6 +8,7 @@ import { Header } from "@/components/Header";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import AdminAuditLogs from "./pages/AdminAuditLogs";
+import AdminOrders from "./pages/AdminOrders";
 import Home from "./pages/customer/Home";
 import Shop from "./pages/customer/Shop";
 import ProductDetail from "./pages/customer/ProductDetail";
@@ -71,6 +72,17 @@ const App = () => (
                 <Header />
                 <main className="flex-1 overflow-y-auto">
                   <AdminAuditLogs />
+                </main>
+              </div>
+            </div>
+          } />
+          <Route path="/admin/orders" element={
+            <div className="flex h-screen bg-gradient-subtle">
+              <Sidebar />
+              <div className="flex-1 flex flex-col lg:pl-64">
+                <Header />
+                <main className="flex-1 overflow-y-auto">
+                  <AdminOrders />
                 </main>
               </div>
             </div>

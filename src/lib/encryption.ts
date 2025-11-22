@@ -4,7 +4,7 @@
  * Real encryption happens server-side via AES-256
  */
 
-const ENCRYPTION_KEY = 'lovable-client-key-2024';
+export const ENCRYPTION_KEY = 'lovable-client-key-2024';
 
 export const encryptData = (data: any): string => {
   try {
