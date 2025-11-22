@@ -37,6 +37,29 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
+    // Check rate limit: 5 payment attempts per 5 minutes
+    const { data: rateLimitData } = await supabase.rpc('check_rate_limit', {
+      p_identifier: user.id,
+      p_endpoint: 'process-safepay-payment',
+      p_max_attempts: 5,
+      p_window_minutes: 5,
+      p_block_minutes: 15
+    });
+
+    if (rateLimitData && !rateLimitData.allowed) {
+      console.log('Rate limit exceeded for user:', user.id);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many payment attempts. Please try again later.',
+          blocked_until: rateLimitData.blocked_until
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 429,
+        }
+      );
+    }
+
     const paymentData: PaymentRequest = await req.json();
     console.log('Processing payment for order:', paymentData.orderId);
 
