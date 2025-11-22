@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -7,6 +7,7 @@ const navigation = [
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Customers", href: "/admin/customers", icon: Users },
+  { name: "Audit Logs", href: "/admin/audit-logs", icon: Shield },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
