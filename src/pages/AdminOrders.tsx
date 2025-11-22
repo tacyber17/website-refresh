@@ -37,10 +37,24 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Call edge function that uses the ENCRYPTION_KEY secret
-      const { data: response, error } = await supabase.functions.invoke('get-decrypted-orders-admin');
+      // Get the current session to include auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
 
-      if (error) throw error;
+      // Call edge function with explicit authorization header
+      const { data: response, error } = await supabase.functions.invoke('get-decrypted-orders-admin', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
 
       let filteredData = (response?.data || []) as Order[];
 
@@ -59,6 +73,7 @@ const AdminOrders = () => {
 
       setOrders(filteredData);
     } catch (error: any) {
+      console.error('Fetch orders error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to fetch orders",
