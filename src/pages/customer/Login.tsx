@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/hooks/use-toast';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,12 +16,49 @@ const Login = () => {
   
   const [loginData, setLoginData] = useState({ email: '', password: '' });
   const [signupData, setSignupData] = useState({ email: '', password: '', name: '' });
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitExpiry, setRateLimitExpiry] = useState<Date | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check client-side rate limiting
+    if (isRateLimited && rateLimitExpiry && new Date() < rateLimitExpiry) {
+      const remainingTime = Math.ceil((rateLimitExpiry.getTime() - new Date().getTime()) / 1000);
+      toast({
+        title: "Too Many Attempts",
+        description: `Please wait ${remainingTime} seconds before trying again.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const success = await login(loginData.email, loginData.password);
+    
     if (success) {
+      // Reset rate limiting on successful login
+      setLoginAttempts(0);
+      setIsRateLimited(false);
+      setRateLimitExpiry(null);
       navigate('/');
+    } else {
+      // Increment failed login attempts
+      const newAttempts = loginAttempts + 1;
+      setLoginAttempts(newAttempts);
+
+      // Rate limit after 5 failed attempts
+      if (newAttempts >= 5) {
+        const expiryTime = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+        setIsRateLimited(true);
+        setRateLimitExpiry(expiryTime);
+        
+        toast({
+          title: "Account Temporarily Locked",
+          description: "Too many failed login attempts. Please try again in 5 minutes.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
