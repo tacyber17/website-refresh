@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { ENCRYPTION_KEY } from "@/lib/encryption";
 
 interface Order {
   id: string;
@@ -38,8 +37,11 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
+      // Use the same encryption key that was used to encrypt the orders
+      const encryptionKey = 'client-side-encryption-key-2024';
+      
       const { data, error } = await supabase.rpc("admin_get_all_decrypted_orders", {
-        p_encryption_key: ENCRYPTION_KEY,
+        p_encryption_key: encryptionKey,
       });
 
       if (error) throw error;
